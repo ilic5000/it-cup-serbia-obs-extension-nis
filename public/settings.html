@@ -619,6 +619,48 @@
       </div>
     </div>
 
+    <!-- ── Goal Scorer Overlay ── -->
+    <div class="card">
+      <div class="card__title">Goal Scorer Overlay</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6;">
+        A lower-third card slides up from the bottom when a new goal is detected in the play-by-play feed.
+        The overlay records the current goal count on startup and only reacts to goals that happen <em>after</em> that point.
+      </p>
+
+      <div class="row">
+        <div class="field">
+          <label for="goalDisplayDuration">Display duration</label>
+          <select id="goalDisplayDuration">
+            <option value="5">5 seconds</option>
+            <option value="6">6 seconds</option>
+            <option value="8" selected>8 seconds (default)</option>
+            <option value="10">10 seconds</option>
+            <option value="12">12 seconds</option>
+            <option value="15">15 seconds</option>
+            <option value="20">20 seconds</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="overrides-grid" style="margin-top:14px">
+        <div class="field">
+          <label for="goalBgColor">Background color</label>
+          <input type="color" id="goalBgColor" value="#0a0d1a"
+                 style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
+        </div>
+        <div class="field">
+          <label for="goalAccentColor">Accent color (badge &amp; border)</label>
+          <input type="color" id="goalAccentColor" value="#e63946"
+                 style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
+        </div>
+        <div class="field">
+          <label for="goalTextColor">Text color</label>
+          <input type="color" id="goalTextColor" value="#f1f5f9"
+                 style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
+        </div>
+      </div>
+    </div>
+
     <!-- ── Save ── -->
     <button class="btn btn-primary btn-save" id="saveBtn">
       Save &amp; Activate
@@ -631,17 +673,89 @@
     <div class="card">
       <div class="card__title">OBS Browser Source</div>
 
+      <p style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Scoreboard Overlay</p>
       <div class="url-display">
         <code id="overlayUrl">http://localhost:3000/overlay.html</code>
         <button class="btn btn-ghost" id="copyBtn">Copy URL</button>
       </div>
-
-      <p class="obs-hint">
+      <p class="obs-hint" style="margin-bottom:16px;">
         In OBS: <strong>Sources → + → Browser</strong> → paste the URL above.<br>
         <strong>Widescreen Bar:</strong> 1920 × 150 px — anchor to bottom of scene.<br>
         <strong>Corner Widget:</strong> 1920 × 1080 px — full canvas, widget appears top-left.<br>
         Enable <em>"Refresh browser when scene becomes active"</em>.
       </p>
+
+      <p style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Goal Scorer Overlay</p>
+      <div class="url-display">
+        <code id="goalOverlayUrl">http://localhost:3000/goal-overlay.html</code>
+        <button class="btn btn-ghost" id="copyGoalBtn">Copy URL</button>
+      </div>
+      <p class="obs-hint">
+        Add as a separate Browser Source: <strong>1920 × 1080 px</strong> — full canvas.<br>
+        The card slides up from the bottom when a new goal is scored.<br>
+        Enable <em>"Refresh browser when scene becomes active"</em>.
+      </p>
+    </div>
+
+    <hr class="divider" style="margin-top:28px">
+
+    <!-- ── Dev: Mock Match ── -->
+    <div class="card" id="mock-card" style="border-color:#d97706;background:rgba(217,119,6,0.06);">
+      <div class="card__title" style="color:#d97706;">⚙ Dev: Mock Match</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+        Simulates a live match using in-memory data — no real URL needed.
+        The overlays pick up mock data automatically.
+        <strong style="color:var(--text2);">Resets when the server restarts.</strong>
+      </p>
+
+      <!-- Status indicator -->
+      <div id="mock-status-row" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div id="mock-dot" style="width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0;"></div>
+        <span id="mock-status-text" style="font-size:13px;color:var(--text2);">Loading…</span>
+        <span id="mock-score-badge" style="margin-left:auto;font-size:20px;font-weight:900;color:#fff;letter-spacing:2px;display:none;"></span>
+      </div>
+
+      <!-- Team name inputs -->
+      <div class="overrides-grid" style="margin-bottom:14px;">
+        <div class="field">
+          <label for="mock-home-name">Home team name</label>
+          <input type="text" id="mock-home-name" placeholder="HOME TEAM">
+        </div>
+        <div class="field">
+          <label for="mock-away-name">Away team name</label>
+          <input type="text" id="mock-away-name" placeholder="AWAY TEAM">
+        </div>
+      </div>
+
+      <!-- Auto-goal interval -->
+      <div class="field" style="margin-bottom:16px;">
+        <label for="mock-auto-interval">Auto-goal interval</label>
+        <select id="mock-auto-interval">
+          <option value="0">Off (manual only)</option>
+          <option value="10">Every 10 seconds</option>
+          <option value="20">Every 20 seconds</option>
+          <option value="30">Every 30 seconds</option>
+          <option value="60">Every 60 seconds</option>
+          <option value="120">Every 2 minutes</option>
+        </select>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button class="btn btn-secondary" id="mock-enable-btn"
+                style="border-color:#d97706;color:#d97706;">Enable Mock</button>
+        <button class="btn btn-secondary" id="mock-disable-btn" style="display:none;">Disable Mock</button>
+        <button class="btn btn-secondary" id="mock-goal-home-btn" style="display:none;">
+          + Goal (Home)
+        </button>
+        <button class="btn btn-secondary" id="mock-goal-away-btn" style="display:none;">
+          + Goal (Away)
+        </button>
+        <button class="btn btn-secondary" id="mock-reset-btn"
+                style="margin-left:auto;border-color:#6b7280;color:#6b7280;display:none;">Reset Match</button>
+      </div>
+
+      <div class="status-bar" id="mock-feedback"></div>
     </div>
 
   </div><!-- /app -->
@@ -685,6 +799,13 @@
 
         // Logo background
         document.getElementById('logoBackground').checked = data.logoBackground !== false;
+
+        // Goal overlay settings
+        const go = data.goalOverlay || {};
+        set('goalDisplayDuration', go.displayDuration || 8);
+        document.getElementById('goalBgColor').value     = go.bgColor     || '#0a0d1a';
+        document.getElementById('goalAccentColor').value = go.accentColor || '#e63946';
+        document.getElementById('goalTextColor').value   = go.textColor   || '#f1f5f9';
 
         const ov = data.overrides || {};
         set('homeTeamName', ov.homeTeamName || '');
@@ -797,6 +918,12 @@
           awayTeamName: val('awayTeamName'),
           homeTeamLogo: val('homeTeamLogo'),
           awayTeamLogo: val('awayTeamLogo')
+        },
+        goalOverlay: {
+          displayDuration: Number(val('goalDisplayDuration')) || 8,
+          bgColor:          document.getElementById('goalBgColor').value,
+          accentColor:      document.getElementById('goalAccentColor').value,
+          textColor:        document.getElementById('goalTextColor').value
         }
       };
 
@@ -821,20 +948,28 @@
       }
     }
 
-    // ── Copy overlay URL ──────────────────────────────────────────────────────
+    // ── Copy overlay URLs ─────────────────────────────────────────────────────
+
+    function makecopier(btnId, url) {
+      document.getElementById(btnId).addEventListener('click', () => {
+        navigator.clipboard.writeText(url).then(() => {
+          const btn = document.getElementById(btnId);
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy URL'; }, 2000);
+        }).catch(() => { prompt('Copy this URL:', url); });
+      });
+    }
 
     function setupOverlayUrl() {
-      const overlayUrl = `${location.protocol}//${location.hostname}:${location.port}/overlay.html`;
-      document.getElementById('overlayUrl').textContent = overlayUrl;
+      const base        = `${location.protocol}//${location.hostname}:${location.port}`;
+      const overlayUrl  = `${base}/overlay.html`;
+      const goalUrl     = `${base}/goal-overlay.html`;
 
-      document.getElementById('copyBtn').addEventListener('click', () => {
-        navigator.clipboard.writeText(overlayUrl).then(() => {
-          document.getElementById('copyBtn').textContent = 'Copied!';
-          setTimeout(() => { document.getElementById('copyBtn').textContent = 'Copy URL'; }, 2000);
-        }).catch(() => {
-          prompt('Copy this URL:', overlayUrl);
-        });
-      });
+      document.getElementById('overlayUrl').textContent     = overlayUrl;
+      document.getElementById('goalOverlayUrl').textContent = goalUrl;
+
+      makecopier('copyBtn',     overlayUrl);
+      makecopier('copyGoalBtn', goalUrl);
     }
 
     // ── Wire events ───────────────────────────────────────────────────────────
@@ -853,6 +988,144 @@
     // Allow pressing Enter in the URL field to trigger preview
     document.getElementById('gameUrl').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('previewBtn').click();
+    });
+
+    // ── Dev: Mock Match ────────────────────────────────────────────────────────
+
+    let mockPollTimer = null;
+
+    function mockFeedback(msg, type) {
+      const el = document.getElementById('mock-feedback');
+      el.textContent = msg;
+      el.className   = `status-bar ${type} show`;
+      setTimeout(() => { el.className = 'status-bar'; }, 3000);
+    }
+
+    function applyMockState(state) {
+      const dot      = document.getElementById('mock-dot');
+      const txt      = document.getElementById('mock-status-text');
+      const badge    = document.getElementById('mock-score-badge');
+      const btnEn    = document.getElementById('mock-enable-btn');
+      const btnDis   = document.getElementById('mock-disable-btn');
+      const btnHome  = document.getElementById('mock-goal-home-btn');
+      const btnAway  = document.getElementById('mock-goal-away-btn');
+      const btnReset = document.getElementById('mock-reset-btn');
+
+      if (state.enabled) {
+        dot.style.background = '#22c55e';
+        dot.style.boxShadow  = '0 0 0 3px rgba(34,197,94,.25)';
+        txt.textContent = `Active — ${state.homeTeam.name} vs ${state.awayTeam.name}`;
+        badge.textContent = `${state.homeScore}  :  ${state.awayScore}`;
+        badge.style.display = '';
+        btnEn.style.display    = 'none';
+        btnDis.style.display   = '';
+        btnHome.style.display  = '';
+        btnAway.style.display  = '';
+        btnReset.style.display = '';
+        btnHome.textContent = `+ Goal (${state.homeTeam.name || 'Home'})`;
+        btnAway.textContent = `+ Goal (${state.awayTeam.name || 'Away'})`;
+        document.getElementById('mock-auto-interval').value = state.autoInterval || 0;
+      } else {
+        dot.style.background = 'var(--border)';
+        dot.style.boxShadow  = 'none';
+        txt.textContent = 'Inactive';
+        badge.style.display = 'none';
+        btnEn.style.display    = '';
+        btnDis.style.display   = 'none';
+        btnHome.style.display  = 'none';
+        btnAway.style.display  = 'none';
+        btnReset.style.display = 'none';
+      }
+    }
+
+    async function refreshMockState() {
+      try {
+        const res = await fetch('/api/mock/state');
+        if (res.ok) applyMockState(await res.json());
+      } catch (_) {}
+    }
+
+    function startMockPoll() {
+      clearInterval(mockPollTimer);
+      mockPollTimer = setInterval(refreshMockState, 2000);
+    }
+
+    async function mockEnable() {
+      const homeName = document.getElementById('mock-home-name').value.trim() || 'HOME TEAM';
+      const awayName = document.getElementById('mock-away-name').value.trim() || 'AWAY TEAM';
+      const interval = Number(document.getElementById('mock-auto-interval').value) || 0;
+      try {
+        const res = await fetch('/api/mock/enable', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ homeTeam: { name: homeName }, awayTeam: { name: awayName }, autoInterval: interval })
+        });
+        const data = await res.json();
+        applyMockState(data.state);
+        mockFeedback('Mock mode enabled. Overlays will now use mock data.', 'success');
+        startMockPoll();
+      } catch (err) {
+        mockFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function mockDisable() {
+      try {
+        await fetch('/api/mock/disable', { method: 'POST' });
+        await refreshMockState();
+        clearInterval(mockPollTimer);
+        mockFeedback('Mock mode disabled. Overlays will use real game data.', 'info');
+      } catch (err) {
+        mockFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function mockGoal(team) {
+      try {
+        const res  = await fetch('/api/mock/goal', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ team })
+        });
+        const data = await res.json();
+        if (!res.ok) { mockFeedback(data.error, 'error'); return; }
+        applyMockState(data.state);
+        const last = data.state.goals.at(-1);
+        mockFeedback(`Goal! ${last.playerName} (${last.minute}') → ${data.state.homeScore}-${data.state.awayScore}`, 'success');
+      } catch (err) {
+        mockFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function mockReset() {
+      try {
+        const res  = await fetch('/api/mock/reset', { method: 'POST' });
+        const data = await res.json();
+        applyMockState(data.state);
+        mockFeedback('Match reset — score back to 0-0.', 'info');
+      } catch (err) {
+        mockFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
+    document.getElementById('mock-enable-btn').addEventListener('click',    mockEnable);
+    document.getElementById('mock-disable-btn').addEventListener('click',   mockDisable);
+    document.getElementById('mock-goal-home-btn').addEventListener('click', () => mockGoal('home'));
+    document.getElementById('mock-goal-away-btn').addEventListener('click', () => mockGoal('away'));
+    document.getElementById('mock-reset-btn').addEventListener('click',     mockReset);
+
+    // Auto-interval change while mock is already active
+    document.getElementById('mock-auto-interval').addEventListener('change', async function () {
+      const state = await fetch('/api/mock/state').then(r => r.json()).catch(() => null);
+      if (!state || !state.enabled) return;
+      await fetch('/api/mock/auto', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interval: Number(this.value) })
+      });
+    });
+
+    // Initial state check
+    refreshMockState().then(() => {
+      // If already enabled (shouldn't happen on fresh load, but just in case), start polling
+      fetch('/api/mock/state').then(r => r.json()).then(s => { if (s.enabled) startMockPoll(); }).catch(() => {});
     });
 
     // ── Boot ──────────────────────────────────────────────────────────────────

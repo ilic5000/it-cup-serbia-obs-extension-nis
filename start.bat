@@ -39,12 +39,12 @@ if not exist "%~dp0node_modules" (
 cd /d "%~dp0"
 
 :: Open settings page in default browser after a short delay
-start /min "" powershell -WindowStyle Hidden -Command "Start-Sleep 2; Start-Process 'http://localhost:3000/settings.html'"
+start /min "" powershell -WindowStyle Hidden -Command "Start-Sleep 2; Start-Process 'http://localhost:%PORT%/settings.html'"
 
 echo  Starting server...
 echo.
-echo  Settings :  http://localhost:3000/settings.html
-echo  Overlay  :  http://localhost:3000/overlay.html
+echo  Settings :  http://localhost:%PORT%/settings.html
+echo  Overlay  :  http://localhost:%PORT%/overlay.html
 echo.
 echo  Press Ctrl+C to stop.
 echo.
