@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IT Cup Scoreboard</title>
+  <!--
+    OBS Browser Source setup
+    ─────────────────────────────────────────────────────
+    Template "bar"    → Width 1920 × Height 150  (scene anchored bottom)
+    Template "corner" → Width 1920 × Height 1080 (full canvas, widget top-left)
+    ✓ Shutdown source when not visible
+    ✓ Refresh browser when scene becomes active
+  -->
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: transparent;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', 'Arial Narrow', Arial, sans-serif;
+    }
+
+    /* ── Template visibility ─────────────────────────────────────────────── */
+    .tpl        { display: none; }
+    .tpl.active { display: block; }
+
+    /* ── Shared: logo wrapper background toggle ──────────────────────────── */
+    .logo-wrap       { background: #ffffff; transition: background .3s, padding .3s; }
+    .logo-wrap.no-bg { background: transparent !important; }
+
+    /* ── Shared: live dot ────────────────────────────────────────────────── */
+    .live-dot {
+      border-radius: 50%;
+      background: #22c55e;
+      animation: livePulse 2.5s ease infinite;
+    }
+    .live-dot.error { background: #e63946; animation: none; }
+    @keyframes livePulse {
+      0%,100% { opacity: 1;   box-shadow: 0 0 0 0   rgba(34,197,94,.6); }
+      50%     { opacity: .75; box-shadow: 0 0 0 5px rgba(34,197,94,0);  }
+    }
+
+    /* ── Shared: score flash ─────────────────────────────────────────────── */
+    .score-flash { animation: scoreFlash .75s ease forwards; }
+    @keyframes scoreFlash {
+      0%   { transform: scale(1); }
+      25%  { transform: scale(1.4);  color: #fff;     text-shadow: 0 0 32px rgba(230,57,70,.9); }
+      60%  { transform: scale(1.18); color: #e63946; }
+      100% { transform: scale(1); }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════
+       TEMPLATE 1 — Wide bar (bottom of screen)
+       ══════════════════════════════════════════════════════════════════════ */
+
+    #tpl-bar { position: fixed; bottom: 0; left: 0; right: 0; }
+
+    .bar {
+      width: 100%;
+      min-height: 130px;
+      background: linear-gradient(100deg, #0a0d1a 0%, #14192e 45%, #0a0d1a 100%);
+      border-top: 3px solid #e63946;
+      box-shadow: 0 -6px 40px rgba(230,57,70,.22), 0 -2px 0 rgba(255,255,255,.04) inset;
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .bar::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0; width: 4px;
+      background: linear-gradient(180deg, #e63946, #9b2335);
+    }
+    .bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        -55deg, transparent, transparent 20px,
+        rgba(255,255,255,.012) 20px, rgba(255,255,255,.012) 21px
+      );
+      pointer-events: none;
+    }
+
+    .bar-brand {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      min-width: 72px; padding-right: 22px;
+      border-right: 1px solid rgba(255,255,255,.08);
+      margin-right: 24px; flex-shrink: 0;
+    }
+    .bar-brand__logo {
+      width: 52px; height: 52px; object-fit: contain;
+      filter: drop-shadow(0 0 6px rgba(230,57,70,.45));
+    }
+    .bar-brand__label {
+      font-size: 8px; font-weight: 700; letter-spacing: 1.8px;
+      color: rgba(255,255,255,.35); text-transform: uppercase;
+    }
+
+    .bar-team {
+      display: flex; align-items: center; flex: 1; min-width: 0; gap: 14px;
+    }
+    .bar-team--home { justify-content: flex-end; padding-right: 28px; }
+    .bar-team--away { justify-content: flex-start; padding-left: 28px; }
+
+    .bar-logo-wrap {
+      width: 84px; height: 76px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border-radius: 4px; padding: 7px;
+    }
+    .bar-logo-wrap.no-bg { padding: 0; }
+    .bar-logo-wrap.no-bg .bar-logo { filter: drop-shadow(0 2px 8px rgba(0,0,0,.6)); }
+    .bar-logo { width: 100%; height: 100%; object-fit: contain; }
+
+    .bar-team__name {
+      font-size: clamp(16px, 1.6vw, 24px);
+      font-weight: 800; color: #f1f5f9;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-shadow: 0 2px 10px rgba(0,0,0,.5); line-height: 1;
+    }
+
+    .bar-score {
+      display: flex; flex-direction: column; align-items: center;
+      flex-shrink: 0; min-width: 200px; gap: 4px;
+    }
+    .bar-score-nums { display: flex; align-items: center; gap: 6px; line-height: 1; }
+    .bar-score-num {
+      font-size: clamp(44px, 4.5vw, 60px);
+      font-weight: 900; color: #fff;
+      min-width: 60px; text-align: center;
+      text-shadow: 0 2px 16px rgba(0,0,0,.7);
+      transition: color .4s ease;
+    }
+    .bar-score-num--leading { color: #e63946; text-shadow: 0 0 24px rgba(230,57,70,.55); }
+    .bar-score-sep {
+      font-size: clamp(34px, 3.5vw, 46px); font-weight: 300;
+      color: rgba(255,255,255,.25); line-height: 1;
+    }
+    .bar-penalties { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.55); letter-spacing: .5px; }
+
+    .bar-info {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
+      min-width: 180px; flex-shrink: 0;
+      padding-left: 24px;
+      border-left: 1px solid rgba(255,255,255,.08);
+      margin-left: 24px;
+    }
+    .bar-badge {
+      background: #e63946; color: #fff;
+      font-size: 10px; font-weight: 800; letter-spacing: 2px;
+      text-transform: uppercase; padding: 3px 12px; border-radius: 2px; white-space: nowrap;
+    }
+    .bar-season   { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.5); text-align: right; }
+    .bar-date,
+    .bar-location {
+      font-size: 10px; color: rgba(255,255,255,.35); text-align: right;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════
+       TEMPLATE 2 — Corner widget (upper-left, broadcast style)
+       ══════════════════════════════════════════════════════════════════════ */
+
+    #tpl-corner { position: fixed; top: 16px; left: 16px; }
+
+    .corner {
+      display: flex;
+      align-items: stretch;
+      border-radius: 5px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.07);
+    }
+
+    /* Team panel */
+    .ct { display: flex; flex-direction: column; width: 148px; flex-shrink: 0; }
+
+    .ct-logo-wrap {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff;
+      padding: 10px 14px;
+      min-height: 72px;
+      transition: background .3s ease;
+    }
+    .ct-logo-wrap.no-bg { background: #111827 !important; padding: 8px 12px; }
+    .ct-logo { width: 82px; height: 58px; object-fit: contain; }
+
+    .ct-name {
+      background: #640c14;
+      color: #fff;
+      font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+      text-transform: uppercase; text-align: center;
+      padding: 6px 8px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Score center */
+    .cs {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #e63946;
+      padding: 0 18px;
+      flex-shrink: 0;
+      min-width: 116px;
+    }
+    .cs-nums { display: flex; align-items: center; gap: 2px; line-height: 1; }
+    .cs-num {
+      font-size: 54px; font-weight: 900; color: #fff;
+      min-width: 38px; text-align: center;
+      text-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    .cs-sep {
+      font-size: 40px; font-weight: 300;
+      color: rgba(255,255,255,.45); margin-bottom: 4px;
+    }
+    .cs-meta {
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+      margin-top: 3px;
+    }
+    .cs-round {
+      font-size: 8px; font-weight: 800; letter-spacing: 2px;
+      color: rgba(255,255,255,.85); text-transform: uppercase;
+      white-space: nowrap; max-width: 110px;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .cs-season {
+      font-size: 7px; font-weight: 600; letter-spacing: 1.5px;
+      color: rgba(255,255,255,.5); text-transform: uppercase;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════
+       TEMPLATE 1 — Wide bar
+       ════════════════════════════════════════════ -->
+  <div id="tpl-bar" class="tpl">
+    <div class="bar">
+
+      <!-- Brand -->
+      <div class="bar-brand">
+        <img class="bar-brand__logo"
+             src="/api/proxy-image?url=https%3A%2F%2Fitkupsrbije.com%2Fimages%2Flogo.png"
+             alt="IT Cup" onerror="this.style.display='none'">
+        <span class="bar-brand__label">IT&nbsp;Cup&nbsp;Serbia</span>
+      </div>
+
+      <!-- Home team -->
+      <div class="bar-team bar-team--home">
+        <span class="bar-team__name" id="b-homeName">—</span>
+        <div class="bar-logo-wrap logo-wrap" id="b-homeLogoWrap">
+          <img class="bar-logo" id="b-homeLogo" src="" alt=""
+               onerror="this.closest('.bar-logo-wrap').style.display='none'">
+        </div>
+      </div>
+
+      <!-- Score -->
+      <div class="bar-score">
+        <div class="bar-score-nums">
+          <span class="bar-score-num" id="b-homeScore">–</span>
+          <span class="bar-score-sep">:</span>
+          <span class="bar-score-num" id="b-awayScore">–</span>
+        </div>
+        <div class="bar-penalties hidden" id="b-penalties">
+          Penali: <span id="b-penaltiesScore">0–0</span>
+        </div>
+      </div>
+
+      <!-- Away team -->
+      <div class="bar-team bar-team--away">
+        <div class="bar-logo-wrap logo-wrap" id="b-awayLogoWrap">
+          <img class="bar-logo" id="b-awayLogo" src="" alt=""
+               onerror="this.closest('.bar-logo-wrap').style.display='none'">
+        </div>
+        <span class="bar-team__name" id="b-awayName">—</span>
+      </div>
+
+      <!-- Match info -->
+      <div class="bar-info">
+        <span class="bar-badge"    id="b-round"></span>
+        <span class="bar-season"   id="b-season"></span>
+        <span class="bar-date"     id="b-datetime"></span>
+        <span class="bar-location" id="b-location"></span>
+      </div>
+
+      <!-- Live dot -->
+      <div class="live-dot" id="b-live"
+           style="position:absolute;bottom:9px;right:12px;width:7px;height:7px"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       TEMPLATE 2 — Corner widget
+       ════════════════════════════════════════════ -->
+  <div id="tpl-corner" class="tpl">
+    <div class="corner" style="position:relative">
+
+      <!-- Home team -->
+      <div class="ct">
+        <div class="ct-logo-wrap logo-wrap" id="c-homeLogoWrap">
+          <img class="ct-logo" id="c-homeLogo" src="" alt=""
+               onerror="this.style.display='none'">
+        </div>
+        <div class="ct-name" id="c-homeName">HOME</div>
+      </div>
+
+      <!-- Score -->
+      <div class="cs">
+        <div class="cs-nums">
+          <span class="cs-num" id="c-homeScore">0</span>
+          <span class="cs-sep">:</span>
+          <span class="cs-num" id="c-awayScore">0</span>
+        </div>
+        <div class="cs-meta">
+          <span class="cs-round"  id="c-round"></span>
+          <span class="cs-season" id="c-season"></span>
+        </div>
+      </div>
+
+      <!-- Away team -->
+      <div class="ct">
+        <div class="ct-logo-wrap logo-wrap" id="c-awayLogoWrap">
+          <img class="ct-logo" id="c-awayLogo" src="" alt=""
+               onerror="this.style.display='none'">
+        </div>
+        <div class="ct-name" id="c-awayName">AWAY</div>
+      </div>
+
+      <!-- Live dot -->
+      <div class="live-dot" id="c-live"
+           style="position:absolute;bottom:5px;right:7px;width:6px;height:6px"></div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    let refreshInterval = 10000;
+    let currentTemplate = null;  // null → forces first applySettings() to activate a template
+    let pollTimer       = null;
+    let prevHomeScore   = null;
+    let prevAwayScore   = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function proxyUrl(url) {
+      return url ? `/api/proxy-image?url=${encodeURIComponent(url)}` : '';
+    }
+
+    function flash(id) {
+      const el = $(id);
+      if (!el) return;
+      el.classList.remove('score-flash');
+      void el.offsetWidth;
+      el.classList.add('score-flash');
+    }
+
+    function setLiveDot(ok) {
+      ['b-live', 'c-live'].forEach(id => {
+        const dot = $(id);
+        if (dot) ok ? dot.classList.remove('error') : dot.classList.add('error');
+      });
+    }
+
+    // ── Settings ────────────────────────────────────────────────────────────
+
+    function applySettings(s) {
+      const tpl = s.template       || 'bar';
+      const lbg = s.logoBackground !== false;
+      const ri  = Math.max(1, Number(s.refreshInterval) || 10) * 1000;
+
+      refreshInterval = ri;
+
+      if (tpl !== currentTemplate) {
+        if (currentTemplate) $(`tpl-${currentTemplate}`).classList.remove('active');
+        $(`tpl-${tpl}`).classList.add('active');
+        currentTemplate = tpl;
+      }
+
+      document.querySelectorAll('.logo-wrap').forEach(el => {
+        el.classList.toggle('no-bg', !lbg);
+      });
+    }
+
+    // ── Render ──────────────────────────────────────────────────────────────
+
+    function render(data) {
+      const homeChanged = prevHomeScore !== null && data.homeScore !== prevHomeScore;
+      const awayChanged = prevAwayScore !== null && data.awayScore !== prevAwayScore;
+
+      renderBar(data, homeChanged, awayChanged);
+      renderCorner(data, homeChanged, awayChanged);
+
+      prevHomeScore = data.homeScore;
+      prevAwayScore = data.awayScore;
+    }
+
+    function setLogo(wrapId, imgId, url) {
+      const wrap = $(wrapId);
+      const img  = $(imgId);
+      if (!wrap || !img) return;
+      if (url) {
+        wrap.style.display = '';
+        img.style.display  = '';
+        img.src = proxyUrl(url);
+      } else {
+        wrap.style.display = 'none';
+      }
+    }
+
+    function renderBar(d, flashHome, flashAway) {
+      $('b-homeName').textContent = d.homeTeam.name || '—';
+      $('b-awayName').textContent = d.awayTeam.name || '—';
+      setLogo('b-homeLogoWrap', 'b-homeLogo', d.homeTeam.logo);
+      setLogo('b-awayLogoWrap', 'b-awayLogo', d.awayTeam.logo);
+
+      if (flashHome) flash('b-homeScore');
+      if (flashAway) flash('b-awayScore');
+
+      $('b-homeScore').textContent = d.homeScore;
+      $('b-awayScore').textContent = d.awayScore;
+      $('b-homeScore').classList.toggle('bar-score-num--leading', d.homeScore > d.awayScore);
+      $('b-awayScore').classList.toggle('bar-score-num--leading', d.awayScore > d.homeScore);
+
+      if (d.penaltiesVisible) {
+        $('b-penalties').classList.remove('hidden');
+        $('b-penaltiesScore').textContent = d.penaltiesScore || '0–0';
+      } else {
+        $('b-penalties').classList.add('hidden');
+      }
+
+      $('b-round').textContent    = d.round    || '';
+      $('b-season').textContent   = d.season   || '';
+      $('b-datetime').textContent = d.datetime || '';
+      $('b-location').textContent = d.location || '';
+    }
+
+    function renderCorner(d, flashHome, flashAway) {
+      $('c-homeName').textContent = d.homeTeam.name || '—';
+      $('c-awayName').textContent = d.awayTeam.name || '—';
+      setLogo('c-homeLogoWrap', 'c-homeLogo', d.homeTeam.logo);
+      setLogo('c-awayLogoWrap', 'c-awayLogo', d.awayTeam.logo);
+
+      if (flashHome) flash('c-homeScore');
+      if (flashAway) flash('c-awayScore');
+
+      $('c-homeScore').textContent = d.homeScore;
+      $('c-awayScore').textContent = d.awayScore;
+      $('c-round').textContent  = d.round  || '';
+      $('c-season').textContent = d.season || '';
+    }
+
+    // ── Fetch ────────────────────────────────────────────────────────────────
+
+    async function fetchSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        if (!res.ok) return;
+        applySettings(await res.json());
+      } catch (_) {}
+    }
+
+    async function fetchGameData() {
+      try {
+        const res  = await fetch('/api/game-data');
+        const data = await res.json();
+        if (!res.ok) { console.warn('[Overlay]', data.error); setLiveDot(false); return; }
+        render(data);
+        setLiveDot(true);
+      } catch (err) {
+        console.warn('[Overlay] Fetch failed:', err.message);
+        setLiveDot(false);
+      }
+    }
+
+    // ── Poll loops ───────────────────────────────────────────────────────────
+
+    async function tick() {
+      await fetchGameData();
+      pollTimer = setTimeout(tick, refreshInterval);
+    }
+
+    function scheduleSettingsRefresh() {
+      setTimeout(async () => {
+        await fetchSettings();
+        scheduleSettingsRefresh();
+      }, 30000);
+    }
+
+    async function init() {
+      await fetchSettings();
+      tick();
+      scheduleSettingsRefresh();
+    }
+
+    init();
+  </script>
+</body>
+</html>

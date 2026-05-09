@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT Cup OBS Extension — Settings</title>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b0e1c;
+      --surface:   #111827;
+      --surface2:  #1a2236;
+      --border:    #1f2d45;
+      --red:       #e63946;
+      --red-dim:   rgba(230,57,70,0.15);
+      --red-glow:  rgba(230,57,70,0.35);
+      --green:     #22c55e;
+      --text:      #f1f5f9;
+      --text2:     #94a3b8;
+      --text3:     #4b5563;
+      --radius:    8px;
+      --transition: 0.2s ease;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────────────────── */
+    .app {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 36px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px var(--red-glow));
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    header p {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    /* ── Section cards ────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      margin-bottom: 20px;
+    }
+
+    .card__title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 16px;
+    }
+
+    /* ── Form elements ───────────────────────────────────────────────────── */
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    select:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px var(--red-dim);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-row input { flex: 1; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--red);
+      color: #fff;
+    }
+    .btn-primary:hover  { background: #c0212e; }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover  { border-color: var(--red); color: var(--red); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text2);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      padding: 7px 14px;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text2); }
+
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+
+    .btn-save {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      justify-content: center;
+    }
+
+    /* ── Preview scoreboard ───────────────────────────────────────────────── */
+    .preview-board {
+      background: linear-gradient(100deg, #0a0d1a 0%, #14192e 50%, #0a0d1a 100%);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--red);
+      border-radius: 6px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .preview-team {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .preview-team--home { justify-content: flex-end; }
+    .preview-team--away { justify-content: flex-start; }
+
+    .preview-logo {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+    }
+
+    .preview-name {
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #f1f5f9;
+    }
+
+    .preview-score {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      min-width: 120px;
+      justify-content: center;
+    }
+
+    .preview-score-num {
+      font-size: 42px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .preview-score-num.leading { color: var(--red); }
+
+    .preview-score-sep {
+      font-size: 30px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.2);
+    }
+
+    .preview-meta {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .preview-badge {
+      background: var(--red);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 2px 10px;
+      border-radius: 2px;
+    }
+
+    .preview-badge-meta {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ── Overrides grid ──────────────────────────────────────────────────── */
+    .overrides-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 20px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    /* ── Overlay link ────────────────────────────────────────────────────── */
+    .url-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+    }
+
+    .url-display code {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text2);
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    .obs-hint {
+      font-size: 12px;
+      color: var(--text3);
+      line-height: 1.6;
+    }
+
+    .obs-hint strong { color: var(--text2); }
+
+    /* ── Status messages ─────────────────────────────────────────────────── */
+    .status-bar {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .status-bar.show { display: block; }
+
+    .status-bar.success {
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: var(--green);
+    }
+
+    .status-bar.error {
+      background: var(--red-dim);
+      border: 1px solid rgba(230,57,70,0.35);
+      color: var(--red);
+    }
+
+    .status-bar.info {
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: #60a5fa;
+    }
+
+    /* ── Spinner ─────────────────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Misc ────────────────────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .row .field { flex: 1; }
+
+    /* ── Template cards ─────────────────────────────────────────────────── */
+    .tpl-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .tpl-card {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .tpl-card input[type="radio"] { display: none; }
+    .tpl-card:has(input:checked) {
+      border-color: var(--red);
+      background: var(--red-dim);
+    }
+    .tpl-card:hover { border-color: rgba(230,57,70,.5); }
+
+    .tpl-preview {
+      width: 100%;
+      height: 56px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #0a0d1a;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+    }
+    /* Bar preview */
+    .tpl-preview-bar .mini-bar {
+      width: 100%; height: 22px;
+      background: linear-gradient(90deg, #0f1320, #1a2236, #0f1320);
+      border-top: 2px solid var(--red);
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px;
+    }
+    .mini-bar-dot { width: 20px; height: 5px; background: rgba(255,255,255,.15); border-radius: 2px; }
+    .mini-bar-score { font-size: 9px; font-weight: 900; color: #fff; letter-spacing: 1px; }
+    /* Corner preview */
+    .tpl-preview-corner {
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
+    .mini-corner {
+      margin: 6px;
+      display: flex;
+      border-radius: 3px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,.5);
+    }
+    .mini-corner-team {
+      width: 32px;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 5px; color: #999; flex-direction: column; gap: 2px;
+    }
+    .mini-corner-team-name {
+      width: 100%; background: #640c14;
+      height: 8px;
+    }
+    .mini-corner-score {
+      background: var(--red);
+      width: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900; color: #fff; letter-spacing: 0;
+    }
+
+    .tpl-card-info { }
+    .tpl-card-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .tpl-card-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+    /* ── Toggle row ─────────────────────────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color var(--transition);
+    }
+    .toggle-row:hover { border-color: rgba(230,57,70,.4); }
+    .toggle-row input[type="checkbox"] { display: none; }
+    .toggle {
+      width: 36px; height: 20px;
+      background: var(--border);
+      border-radius: 10px;
+      position: relative;
+      flex-shrink: 0;
+      transition: background var(--transition);
+    }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 14px; height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform var(--transition);
+    }
+    .toggle-row:has(input:checked) .toggle { background: var(--red); }
+    .toggle-row:has(input:checked) .toggle::after { transform: translateX(16px); }
+    .toggle-label-text { font-size: 13px; color: var(--text2); }
+
+    a { color: var(--red); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- ── Header ── -->
+    <header>
+      <img src="/api/proxy-image?url=https%3A%2F%2Fitkupsrbije.com%2Fimages%2Flogo.png"
+           alt="IT Cup" onerror="this.style.display='none'">
+      <div>
+        <h1>IT Cup OBS Extension</h1>
+        <p>Configure and preview the scoreboard overlay</p>
+      </div>
+    </header>
+
+    <!-- ── Game URL ── -->
+    <div class="card">
+      <div class="card__title">Game URL</div>
+      <div class="input-row">
+        <input type="url" id="gameUrl"
+               placeholder="https://itkupsrbije.com/game.php?id=31">
+        <button class="btn btn-secondary" id="previewBtn">
+          <span id="previewBtnLabel">Preview</span>
+        </button>
+      </div>
+      <div class="status-bar" id="previewStatus"></div>
+    </div>
+
+    <!-- ── Preview result (shown after preview) ── -->
+    <div id="previewSection" class="hidden">
+
+      <!-- Mini scoreboard -->
+      <div class="preview-board">
+        <div class="preview-team preview-team--home">
+          <span class="preview-name" id="pvHomeName">—</span>
+          <img class="preview-logo" id="pvHomeLogo" src="" alt="" onerror="this.style.display='none'">
+        </div>
+
+        <div class="preview-score">
+          <span class="preview-score-num" id="pvHomeScore">0</span>
+          <span class="preview-score-sep">:</span>
+          <span class="preview-score-num" id="pvAwayScore">0</span>
+        </div>
+
+        <div class="preview-team preview-team--away">
+          <img class="preview-logo" id="pvAwayLogo" src="" alt="" onerror="this.style.display='none'">
+          <span class="preview-name" id="pvAwayName">—</span>
+        </div>
+      </div>
+
+      <div class="preview-meta" id="pvMeta"></div>
+
+      <!-- Overrides -->
+      <div class="card" style="margin-top:20px">
+        <div class="card__title">Customize (Optional)</div>
+        <p style="font-size:12px;color:var(--text3);margin-bottom:16px;">
+          Override names or logos if they weren't parsed correctly.
+          Leave blank to use values from the page.
+        </p>
+
+        <div class="overrides-grid">
+          <div class="field">
+            <label for="homeTeamName">Home team name</label>
+            <input type="text" id="homeTeamName" placeholder="Auto-detected">
+          </div>
+          <div class="field">
+            <label for="homeTeamLogo">Home team logo URL</label>
+            <input type="url" id="homeTeamLogo" placeholder="Auto-detected">
+          </div>
+          <div class="field">
+            <label for="awayTeamName">Away team name</label>
+            <input type="text" id="awayTeamName" placeholder="Auto-detected">
+          </div>
+          <div class="field">
+            <label for="awayTeamLogo">Away team logo URL</label>
+            <input type="url" id="awayTeamLogo" placeholder="Auto-detected">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Design ── -->
+    <div class="card">
+      <div class="card__title">Overlay Design</div>
+
+      <div class="tpl-grid">
+        <!-- Template 1: Bar -->
+        <label class="tpl-card">
+          <input type="radio" name="template" value="bar" checked>
+          <div class="tpl-preview tpl-preview-bar">
+            <div class="mini-bar">
+              <div class="mini-bar-dot"></div>
+              <span class="mini-bar-score">3 : 1</span>
+              <div class="mini-bar-dot"></div>
+            </div>
+          </div>
+          <div class="tpl-card-info">
+            <div class="tpl-card-name">Widescreen Bar</div>
+            <div class="tpl-card-desc">Full-width strip at the bottom of the stream</div>
+          </div>
+        </label>
+
+        <!-- Template 2: Corner -->
+        <label class="tpl-card">
+          <input type="radio" name="template" value="corner">
+          <div class="tpl-preview tpl-preview-corner">
+            <div class="mini-corner">
+              <div class="mini-corner-team">
+                <div style="flex:1;display:flex;align-items:center;justify-content:center">▣</div>
+                <div class="mini-corner-team-name"></div>
+              </div>
+              <div class="mini-corner-score">3:1</div>
+              <div class="mini-corner-team">
+                <div style="flex:1;display:flex;align-items:center;justify-content:center">▣</div>
+                <div class="mini-corner-team-name"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tpl-card-info">
+            <div class="tpl-card-name">Corner Widget</div>
+            <div class="tpl-card-desc">Compact box in the upper-left corner (CL style)</div>
+          </div>
+        </label>
+      </div>
+
+      <label class="toggle-row">
+        <input type="checkbox" id="logoBackground" checked>
+        <div class="toggle"></div>
+        <span class="toggle-label-text">White background behind team logos</span>
+      </label>
+    </div>
+
+    <!-- ── Settings ── -->
+    <div class="card">
+      <div class="card__title">Settings</div>
+      <div class="row">
+        <div class="field">
+          <label for="refreshInterval">Auto-refresh interval</label>
+          <select id="refreshInterval">
+            <option value="5">5 seconds</option>
+            <option value="10" selected>10 seconds (default)</option>
+            <option value="15">15 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="30">30 seconds</option>
+            <option value="60">60 seconds</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Save ── -->
+    <button class="btn btn-primary btn-save" id="saveBtn">
+      Save &amp; Activate
+    </button>
+    <div class="status-bar" id="saveStatus"></div>
+
+    <hr class="divider" style="margin-top:28px">
+
+    <!-- ── Overlay link ── -->
+    <div class="card">
+      <div class="card__title">OBS Browser Source</div>
+
+      <div class="url-display">
+        <code id="overlayUrl">http://localhost:3000/overlay.html</code>
+        <button class="btn btn-ghost" id="copyBtn">Copy URL</button>
+      </div>
+
+      <p class="obs-hint">
+        In OBS: <strong>Sources → + → Browser</strong> → paste the URL above.<br>
+        <strong>Widescreen Bar:</strong> 1920 × 150 px — anchor to bottom of scene.<br>
+        <strong>Corner Widget:</strong> 1920 × 1080 px — full canvas, widget appears top-left.<br>
+        Enable <em>"Refresh browser when scene becomes active"</em>.
+      </p>
+    </div>
+
+  </div><!-- /app -->
+
+  <script>
+    'use strict';
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    function showStatus(id, message, type) {
+      const el = document.getElementById(id);
+      el.textContent = message;
+      el.className   = `status-bar ${type} show`;
+    }
+
+    function hideStatus(id) {
+      document.getElementById(id).className = 'status-bar';
+    }
+
+    function proxyUrl(url) {
+      return url ? `/api/proxy-image?url=${encodeURIComponent(url)}` : '';
+    }
+
+    function val(id) { return document.getElementById(id).value.trim(); }
+    function set(id, v) { document.getElementById(id).value = v || ''; }
+
+    // ── Load saved settings on page open ────────────────────────────────────
+
+    async function loadSettings() {
+      try {
+        const res  = await fetch('/api/settings');
+        const data = await res.json();
+
+        set('gameUrl',         data.gameUrl || '');
+        set('refreshInterval', data.refreshInterval || 10);
+
+        // Template
+        const tpl = data.template || 'bar';
+        const tplInput = document.querySelector(`input[name="template"][value="${tpl}"]`);
+        if (tplInput) tplInput.checked = true;
+
+        // Logo background
+        document.getElementById('logoBackground').checked = data.logoBackground !== false;
+
+        const ov = data.overrides || {};
+        set('homeTeamName', ov.homeTeamName || '');
+        set('awayTeamName', ov.awayTeamName || '');
+        set('homeTeamLogo', ov.homeTeamLogo || '');
+        set('awayTeamLogo', ov.awayTeamLogo || '');
+
+        // If a game URL was already saved, auto-preview it
+        if (data.gameUrl) {
+          await runPreview(data.gameUrl);
+        }
+      } catch (err) {
+        console.warn('Could not load settings:', err);
+      }
+    }
+
+    // ── Preview ──────────────────────────────────────────────────────────────
+
+    async function runPreview(url) {
+      const btn   = document.getElementById('previewBtn');
+      const label = document.getElementById('previewBtnLabel');
+
+      btn.disabled  = true;
+      label.innerHTML = '<span class="spinner"></span>';
+      hideStatus('previewStatus');
+
+      try {
+        const res  = await fetch(`/api/preview?url=${encodeURIComponent(url)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          showStatus('previewStatus', data.error || 'Preview failed.', 'error');
+          return;
+        }
+
+        renderPreview(data);
+        document.getElementById('previewSection').classList.remove('hidden');
+        showStatus('previewStatus', '✓ Game data loaded successfully.', 'success');
+
+      } catch (err) {
+        showStatus('previewStatus', `Connection error: ${err.message}`, 'error');
+      } finally {
+        btn.disabled  = false;
+        label.textContent = 'Preview';
+      }
+    }
+
+    function renderPreview(data) {
+      // Mini scoreboard
+      document.getElementById('pvHomeName').textContent = data.homeTeam.name || '—';
+      document.getElementById('pvAwayName').textContent = data.awayTeam.name || '—';
+
+      const pvHomeLogo = document.getElementById('pvHomeLogo');
+      const pvAwayLogo = document.getElementById('pvAwayLogo');
+
+      pvHomeLogo.src   = proxyUrl(data.homeTeam.logo);
+      pvHomeLogo.style.display = data.homeTeam.logo ? '' : 'none';
+      pvAwayLogo.src   = proxyUrl(data.awayTeam.logo);
+      pvAwayLogo.style.display = data.awayTeam.logo ? '' : 'none';
+
+      document.getElementById('pvHomeScore').textContent = data.homeScore;
+      document.getElementById('pvAwayScore').textContent = data.awayScore;
+
+      document.getElementById('pvHomeScore').classList.toggle('leading', data.homeScore > data.awayScore);
+      document.getElementById('pvAwayScore').classList.toggle('leading', data.awayScore > data.homeScore);
+
+      // Meta badges
+      const metaEl = document.getElementById('pvMeta');
+      metaEl.innerHTML = '';
+      const addMeta = (text, isBadge) => {
+        if (!text) return;
+        const s = document.createElement('span');
+        s.className   = isBadge ? 'preview-badge' : 'preview-badge-meta';
+        s.textContent = text;
+        metaEl.appendChild(s);
+      };
+      addMeta(data.round,    true);
+      addMeta(data.season,   false);
+      addMeta(data.datetime, false);
+      if (data.location) addMeta('📍 ' + data.location, false);
+
+      // Populate override fields only if they are currently empty
+      if (!val('homeTeamName')) set('homeTeamName', data.homeTeam.name);
+      if (!val('awayTeamName')) set('awayTeamName', data.awayTeam.name);
+    }
+
+    // ── Save ─────────────────────────────────────────────────────────────────
+
+    async function save() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled  = true;
+      btn.innerHTML = '<span class="spinner"></span> Saving…';
+      hideStatus('saveStatus');
+
+      const gameUrl = val('gameUrl');
+      if (!gameUrl) {
+        showStatus('saveStatus', 'Please enter a game URL first.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Save & Activate';
+        return;
+      }
+
+      const payload = {
+        gameUrl,
+        refreshInterval: Number(val('refreshInterval')) || 10,
+        template:        document.querySelector('input[name="template"]:checked')?.value || 'bar',
+        logoBackground:  document.getElementById('logoBackground').checked,
+        overrides: {
+          homeTeamName: val('homeTeamName'),
+          awayTeamName: val('awayTeamName'),
+          homeTeamLogo: val('homeTeamLogo'),
+          awayTeamLogo: val('awayTeamLogo')
+        }
+      };
+
+      try {
+        const res  = await fetch('/api/settings', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showStatus('saveStatus', data.error || 'Save failed.', 'error');
+        } else {
+          showStatus('saveStatus', '✓ Settings saved. The overlay will pick up changes within 30 seconds.', 'success');
+        }
+      } catch (err) {
+        showStatus('saveStatus', `Error: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save & Activate';
+      }
+    }
+
+    // ── Copy overlay URL ──────────────────────────────────────────────────────
+
+    function setupOverlayUrl() {
+      const overlayUrl = `${location.protocol}//${location.hostname}:${location.port}/overlay.html`;
+      document.getElementById('overlayUrl').textContent = overlayUrl;
+
+      document.getElementById('copyBtn').addEventListener('click', () => {
+        navigator.clipboard.writeText(overlayUrl).then(() => {
+          document.getElementById('copyBtn').textContent = 'Copied!';
+          setTimeout(() => { document.getElementById('copyBtn').textContent = 'Copy URL'; }, 2000);
+        }).catch(() => {
+          prompt('Copy this URL:', overlayUrl);
+        });
+      });
+    }
+
+    // ── Wire events ───────────────────────────────────────────────────────────
+
+    document.getElementById('previewBtn').addEventListener('click', () => {
+      const url = val('gameUrl');
+      if (!url) {
+        showStatus('previewStatus', 'Enter a game URL first.', 'error');
+        return;
+      }
+      runPreview(url);
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', save);
+
+    // Allow pressing Enter in the URL field to trigger preview
+    document.getElementById('gameUrl').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('previewBtn').click();
+    });
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    setupOverlayUrl();
+    loadSettings();
+  </script>
+</body>
+</html>
