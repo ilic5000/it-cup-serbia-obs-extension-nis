@@ -147,6 +147,8 @@ let mockState = {
   awayScore:    0,
   minute:       1,
   goals:        [],
+  cards:        [],
+  redCards:     [],
   autoInterval: 0,   // seconds; 0 = disabled
 };
 let _autoGoalTimer = null;
@@ -169,6 +171,40 @@ function mockAddGoal(team) {
     minute:     String(mockState.minute),
     isAway,
     scoreAfter: `${mockState.homeScore}-${mockState.awayScore}`,
+  });
+}
+
+function mockAddCard(team) {
+  const isAway  = team === 'away';
+  const players = isAway ? MOCK_AWAY_PLAYERS : MOCK_HOME_PLAYERS;
+  const player  = players[Math.floor(Math.random() * players.length)];
+
+  mockState.minute = Math.min(mockState.minute + Math.floor(Math.random() * 5) + 1, 90);
+
+  mockState.cards.push({
+    index:      mockState.cards.length,
+    playerName: player.name,
+    playerNum:  player.num,
+    playerImg:  '',
+    minute:     String(mockState.minute),
+    isAway,
+  });
+}
+
+function mockAddRedCard(team) {
+  const isAway  = team === 'away';
+  const players = isAway ? MOCK_AWAY_PLAYERS : MOCK_HOME_PLAYERS;
+  const player  = players[Math.floor(Math.random() * players.length)];
+
+  mockState.minute = Math.min(mockState.minute + Math.floor(Math.random() * 5) + 1, 90);
+
+  mockState.redCards.push({
+    index:      mockState.redCards.length,
+    playerName: player.name,
+    playerNum:  player.num,
+    playerImg:  '',
+    minute:     String(mockState.minute),
+    isAway,
   });
 }
 
@@ -220,11 +256,31 @@ app.post('/api/mock/goal', (req, res) => {
   res.json({ success: true, state: mockState });
 });
 
+app.post('/api/mock/card', (req, res) => {
+  if (!mockState.enabled) return res.status(400).json({ error: 'Mock mode is not enabled.' });
+  const team = (req.body || {}).team === 'away' ? 'away' : 'home';
+  mockAddCard(team);
+  const last = mockState.cards.at(-1);
+  console.log(`[Mock] Yellow card → ${last.playerName} (${team})`);
+  res.json({ success: true, state: mockState });
+});
+
+app.post('/api/mock/red-card', (req, res) => {
+  if (!mockState.enabled) return res.status(400).json({ error: 'Mock mode is not enabled.' });
+  const team = (req.body || {}).team === 'away' ? 'away' : 'home';
+  mockAddRedCard(team);
+  const last = mockState.redCards.at(-1);
+  console.log(`[Mock] Red card → ${last.playerName} (${team})`);
+  res.json({ success: true, state: mockState });
+});
+
 app.post('/api/mock/reset', (_req, res) => {
   mockState.homeScore = 0;
   mockState.awayScore = 0;
   mockState.minute    = 1;
   mockState.goals     = [];
+  mockState.cards     = [];
+  mockState.redCards  = [];
   console.log('[Mock] Match reset');
   res.json({ success: true, state: mockState });
 });
@@ -338,16 +394,62 @@ async function scrapeGoalEvents(url) {
     goals.push({ index: goals.length, playerName, playerNum, playerImg, minute, isAway, scoreAfter });
   });
 
-  return { homeTeam, awayTeam, goals };
+  // Collect yellow card events
+  const cards = [];
+  $('[data-page="playByPlays"] .play-by-play-item').each((_i, el) => {
+    const $el = $(el);
+    if (!$el.find('.play-by-play-action-name .small-yellow-card-box').length) return;
+
+    const isAway = $el.hasClass('play-by-play-item-away-team');
+    const inner  = $el.find('.play-by-play-item-committer-inner').first();
+
+    const playerName = inner.find('span:not(.play-by-play-teamname)').first().text().trim();
+    const playerNum  = inner.find('b.play-by-play-player-num').first().text().trim();
+    const playerImg  = abs(inner.find('.table-player-img img').attr('src') || '');
+
+    const actionClone = inner.find('.play-by-play-action-name').first().clone();
+    actionClone.find('svg, .small-yellow-card-box').remove();
+    const actionText  = actionClone.text().trim();
+    const minuteMatch = actionText.match(/(\d+(?:\+\d+)?)/);
+    const minute      = minuteMatch ? minuteMatch[1] : '';
+
+    cards.push({ index: cards.length, playerName, playerNum, playerImg, minute, isAway });
+  });
+
+  // Collect red card events
+  const redCards = [];
+  $('[data-page="playByPlays"] .play-by-play-item').each((_i, el) => {
+    const $el = $(el);
+    if (!$el.find('.play-by-play-action-name .small-red-card-box').length) return;
+
+    const isAway = $el.hasClass('play-by-play-item-away-team');
+    const inner  = $el.find('.play-by-play-item-committer-inner').first();
+
+    const playerName = inner.find('span:not(.play-by-play-teamname)').first().text().trim();
+    const playerNum  = inner.find('b.play-by-play-player-num').first().text().trim();
+    const playerImg  = abs(inner.find('.table-player-img img').attr('src') || '');
+
+    const actionClone = inner.find('.play-by-play-action-name').first().clone();
+    actionClone.find('svg, .small-red-card-box').remove();
+    const actionText  = actionClone.text().trim();
+    const minuteMatch = actionText.match(/(\d+(?:\+\d+)?)/);
+    const minute      = minuteMatch ? minuteMatch[1] : '';
+
+    redCards.push({ index: redCards.length, playerName, playerNum, playerImg, minute, isAway });
+  });
+
+  return { homeTeam, awayTeam, goals, cards, redCards };
 }
 
 app.get('/api/goal-events', async (req, res) => {
   // Mock mode shortcut
   if (mockState.enabled) {
     return res.json({
-      homeTeam: mockState.homeTeam,
-      awayTeam: mockState.awayTeam,
-      goals:    mockState.goals,
+      homeTeam:  mockState.homeTeam,
+      awayTeam:  mockState.awayTeam,
+      goals:     mockState.goals,
+      cards:     mockState.cards,
+      redCards:  mockState.redCards,
     });
   }
 

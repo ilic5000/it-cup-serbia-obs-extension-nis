@@ -751,6 +751,22 @@
         <button class="btn btn-secondary" id="mock-goal-away-btn" style="display:none;">
           + Goal (Away)
         </button>
+        <button class="btn btn-secondary" id="mock-card-home-btn"
+                style="display:none;border-color:#f5c518;color:#f5c518;">
+          🟨 Card (Home)
+        </button>
+        <button class="btn btn-secondary" id="mock-card-away-btn"
+                style="display:none;border-color:#f5c518;color:#f5c518;">
+          🟨 Card (Away)
+        </button>
+        <button class="btn btn-secondary" id="mock-red-card-home-btn"
+                style="display:none;border-color:#dc2626;color:#dc2626;">
+          🟥 Red Card (Home)
+        </button>
+        <button class="btn btn-secondary" id="mock-red-card-away-btn"
+                style="display:none;border-color:#dc2626;color:#dc2626;">
+          🟥 Red Card (Away)
+        </button>
         <button class="btn btn-secondary" id="mock-reset-btn"
                 style="margin-left:auto;border-color:#6b7280;color:#6b7280;display:none;">Reset Match</button>
       </div>
@@ -1007,8 +1023,12 @@
       const badge    = document.getElementById('mock-score-badge');
       const btnEn    = document.getElementById('mock-enable-btn');
       const btnDis   = document.getElementById('mock-disable-btn');
-      const btnHome  = document.getElementById('mock-goal-home-btn');
-      const btnAway  = document.getElementById('mock-goal-away-btn');
+      const btnHome     = document.getElementById('mock-goal-home-btn');
+      const btnAway     = document.getElementById('mock-goal-away-btn');
+      const btnCardHome    = document.getElementById('mock-card-home-btn');
+      const btnCardAway    = document.getElementById('mock-card-away-btn');
+      const btnRedCardHome = document.getElementById('mock-red-card-home-btn');
+      const btnRedCardAway = document.getElementById('mock-red-card-away-btn');
       const btnReset = document.getElementById('mock-reset-btn');
 
       if (state.enabled) {
@@ -1017,11 +1037,15 @@
         txt.textContent = `Active — ${state.homeTeam.name} vs ${state.awayTeam.name}`;
         badge.textContent = `${state.homeScore}  :  ${state.awayScore}`;
         badge.style.display = '';
-        btnEn.style.display    = 'none';
-        btnDis.style.display   = '';
-        btnHome.style.display  = '';
-        btnAway.style.display  = '';
-        btnReset.style.display = '';
+        btnEn.style.display       = 'none';
+        btnDis.style.display      = '';
+        btnHome.style.display     = '';
+        btnAway.style.display     = '';
+        btnCardHome.style.display    = '';
+        btnCardAway.style.display    = '';
+        btnRedCardHome.style.display = '';
+        btnRedCardAway.style.display = '';
+        btnReset.style.display       = '';
         btnHome.textContent = `+ Goal (${state.homeTeam.name || 'Home'})`;
         btnAway.textContent = `+ Goal (${state.awayTeam.name || 'Away'})`;
         document.getElementById('mock-auto-interval').value = state.autoInterval || 0;
@@ -1030,11 +1054,15 @@
         dot.style.boxShadow  = 'none';
         txt.textContent = 'Inactive';
         badge.style.display = 'none';
-        btnEn.style.display    = '';
-        btnDis.style.display   = 'none';
-        btnHome.style.display  = 'none';
-        btnAway.style.display  = 'none';
-        btnReset.style.display = 'none';
+        btnEn.style.display       = '';
+        btnDis.style.display      = 'none';
+        btnHome.style.display     = 'none';
+        btnAway.style.display     = 'none';
+        btnCardHome.style.display    = 'none';
+        btnCardAway.style.display    = 'none';
+        btnRedCardHome.style.display = 'none';
+        btnRedCardAway.style.display = 'none';
+        btnReset.style.display       = 'none';
       }
     }
 
@@ -1095,6 +1123,38 @@
       }
     }
 
+    async function mockCard(team) {
+      try {
+        const res  = await fetch('/api/mock/card', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ team })
+        });
+        const data = await res.json();
+        if (!res.ok) { mockFeedback(data.error, 'error'); return; }
+        applyMockState(data.state);
+        const last = data.state.cards.at(-1);
+        mockFeedback(`Yellow card! ${last.playerName} (${last.minute}')`, 'success');
+      } catch (err) {
+        mockFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function mockRedCard(team) {
+      try {
+        const res  = await fetch('/api/mock/red-card', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ team })
+        });
+        const data = await res.json();
+        if (!res.ok) { mockFeedback(data.error, 'error'); return; }
+        applyMockState(data.state);
+        const last = data.state.redCards.at(-1);
+        mockFeedback(`Red card! ${last.playerName} (${last.minute}')`, 'success');
+      } catch (err) {
+        mockFeedback('Error: ' + err.message, 'error');
+      }
+    }
+
     async function mockReset() {
       try {
         const res  = await fetch('/api/mock/reset', { method: 'POST' });
@@ -1110,6 +1170,10 @@
     document.getElementById('mock-disable-btn').addEventListener('click',   mockDisable);
     document.getElementById('mock-goal-home-btn').addEventListener('click', () => mockGoal('home'));
     document.getElementById('mock-goal-away-btn').addEventListener('click', () => mockGoal('away'));
+    document.getElementById('mock-card-home-btn').addEventListener('click',     () => mockCard('home'));
+    document.getElementById('mock-card-away-btn').addEventListener('click',     () => mockCard('away'));
+    document.getElementById('mock-red-card-home-btn').addEventListener('click', () => mockRedCard('home'));
+    document.getElementById('mock-red-card-away-btn').addEventListener('click', () => mockRedCard('away'));
     document.getElementById('mock-reset-btn').addEventListener('click',     mockReset);
 
     // Auto-interval change while mock is already active
