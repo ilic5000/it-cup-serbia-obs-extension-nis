@@ -85,10 +85,12 @@ async function scrapeGame(url) {
   const teamEls = $('.game-header-team');
   const homeTeam = {
     name: $(teamEls[0]).find('h3').text().trim(),
+    city: $(teamEls[0]).find('.matches-item-team-city').text().trim(),
     logo: abs($(teamEls[0]).find('img').attr('src'))
   };
   const awayTeam = {
     name: $(teamEls[1]).find('h3').text().trim(),
+    city: $(teamEls[1]).find('.matches-item-team-city').text().trim(),
     logo: abs($(teamEls[1]).find('img').attr('src'))
   };
 
@@ -141,8 +143,8 @@ const MOCK_AWAY_PLAYERS = [
 
 let mockState = {
   enabled:      false,
-  homeTeam:     { name: 'HOME TEAM', logo: '' },
-  awayTeam:     { name: 'AWAY TEAM', logo: '' },
+  homeTeam:     { name: 'HOME TEAM', city: '', logo: '' },
+  awayTeam:     { name: 'AWAY TEAM', city: '', logo: '' },
   homeScore:    0,
   awayScore:    0,
   minute:       1,
@@ -227,13 +229,36 @@ app.get('/api/mock/state', (_req, res) => {
   res.json(mockState);
 });
 
-app.post('/api/mock/enable', (req, res) => {
+app.post('/api/mock/enable', async (req, res) => {
   const { homeTeam, awayTeam, autoInterval } = req.body || {};
   mockState.enabled = true;
-  if (homeTeam?.name) mockState.homeTeam.name = homeTeam.name;
-  if (homeTeam?.logo) mockState.homeTeam.logo = homeTeam.logo;
-  if (awayTeam?.name) mockState.awayTeam.name = awayTeam.name;
-  if (awayTeam?.logo) mockState.awayTeam.logo = awayTeam.logo;
+
+  // Try to pull team data from the configured game URL as the default source
+  const settings = loadSettings();
+  if (settings.gameUrl) {
+    try {
+      const scraped = await scrapeGame(settings.gameUrl);
+      mockState.homeTeam.name = homeTeam?.name || scraped.homeTeam.name || 'HOME TEAM';
+      mockState.homeTeam.city = scraped.homeTeam.city || '';
+      mockState.homeTeam.logo = homeTeam?.logo || scraped.homeTeam.logo || '';
+      mockState.awayTeam.name = awayTeam?.name || scraped.awayTeam.name || 'AWAY TEAM';
+      mockState.awayTeam.city = scraped.awayTeam.city || '';
+      mockState.awayTeam.logo = awayTeam?.logo || scraped.awayTeam.logo || '';
+      console.log('[Mock] Team data pulled from game URL');
+    } catch (err) {
+      console.warn('[Mock] Could not scrape game URL, using provided values:', err.message);
+      if (homeTeam?.name) mockState.homeTeam.name = homeTeam.name;
+      if (homeTeam?.logo) mockState.homeTeam.logo = homeTeam.logo;
+      if (awayTeam?.name) mockState.awayTeam.name = awayTeam.name;
+      if (awayTeam?.logo) mockState.awayTeam.logo = awayTeam.logo;
+    }
+  } else {
+    if (homeTeam?.name) mockState.homeTeam.name = homeTeam.name;
+    if (homeTeam?.logo) mockState.homeTeam.logo = homeTeam.logo;
+    if (awayTeam?.name) mockState.awayTeam.name = awayTeam.name;
+    if (awayTeam?.logo) mockState.awayTeam.logo = awayTeam.logo;
+  }
+
   if (autoInterval !== undefined) mockState.autoInterval = Math.max(0, Number(autoInterval) || 0);
   startAutoGoalTimer();
   console.log('[Mock] Mock mode ENABLED');
@@ -360,10 +385,12 @@ async function scrapeGoalEvents(url) {
   const teamEls = $('.game-header-team');
   const homeTeam = {
     name: $(teamEls[0]).find('h3').text().trim(),
+    city: $(teamEls[0]).find('.matches-item-team-city').text().trim(),
     logo: abs($(teamEls[0]).find('img').attr('src'))
   };
   const awayTeam = {
     name: $(teamEls[1]).find('h3').text().trim(),
+    city: $(teamEls[1]).find('.matches-item-team-city').text().trim(),
     logo: abs($(teamEls[1]).find('img').attr('src'))
   };
 

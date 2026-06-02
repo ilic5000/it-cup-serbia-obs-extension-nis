@@ -193,9 +193,23 @@
     .preview-team--home { justify-content: flex-end; }
     .preview-team--away { justify-content: flex-start; }
 
+    .preview-logo-wrap {
+      display: flex; align-items: center; justify-content: center;
+      width: 60px; height: 52px;
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 5px;
+      flex-shrink: 0;
+      transition: background .2s ease, padding .2s ease;
+    }
+    .preview-logo-wrap.no-bg {
+      background: transparent !important;
+      padding: 0;
+    }
+
     .preview-logo {
-      width: 52px;
-      height: 52px;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
     }
 
@@ -206,6 +220,50 @@
       letter-spacing: 1px;
       color: #f1f5f9;
     }
+
+    /* ── Corner widget preview ───────────────────────────────────────────── */
+    .pv-corner-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .pv-corner {
+      display: flex;
+      align-items: stretch;
+      border-radius: 5px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.07);
+    }
+    .pvc-team {
+      display: flex; flex-direction: column;
+      width: 120px; flex-shrink: 0;
+    }
+    .pvc-logo-wrap {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      background: #ffffff;
+      padding: 8px 10px;
+      min-height: 62px;
+      transition: background .2s ease, padding .2s ease;
+    }
+    .pvc-logo-wrap.no-bg { background: #111827 !important; padding: 6px 8px; }
+    .pvc-logo { width: 68px; height: 50px; object-fit: contain; }
+    .pvc-name {
+      background: #640c14; color: #fff;
+      font-size: 9px; font-weight: 800; letter-spacing: 1.5px;
+      text-transform: uppercase; text-align: center;
+      padding: 5px 6px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pvc-score-panel {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #e63946;
+      padding: 0 16px; min-width: 90px; flex-shrink: 0;
+    }
+    .pvc-nums { display: flex; align-items: center; gap: 2px; line-height: 1; }
+    .pvc-num  { font-size: 44px; font-weight: 900; color: #fff; min-width: 30px; text-align: center; }
+    .pvc-sep  { font-size: 32px; font-weight: 300; color: rgba(255,255,255,.4); }
 
     .preview-score {
       display: flex;
@@ -501,10 +559,12 @@
     <div id="previewSection" class="hidden">
 
       <!-- Mini scoreboard -->
-      <div class="preview-board">
+      <div class="preview-board" id="previewBarBoard">
         <div class="preview-team preview-team--home">
           <span class="preview-name" id="pvHomeName">—</span>
-          <img class="preview-logo" id="pvHomeLogo" src="" alt="" onerror="this.style.display='none'">
+          <div class="preview-logo-wrap" id="pvHomeLogoWrap">
+            <img class="preview-logo" id="pvHomeLogo" src="" alt="" onerror="this.closest('.preview-logo-wrap').style.display='none'">
+          </div>
         </div>
 
         <div class="preview-score">
@@ -514,8 +574,35 @@
         </div>
 
         <div class="preview-team preview-team--away">
-          <img class="preview-logo" id="pvAwayLogo" src="" alt="" onerror="this.style.display='none'">
+          <div class="preview-logo-wrap" id="pvAwayLogoWrap">
+            <img class="preview-logo" id="pvAwayLogo" src="" alt="" onerror="this.closest('.preview-logo-wrap').style.display='none'">
+          </div>
           <span class="preview-name" id="pvAwayName">—</span>
+        </div>
+      </div>
+
+      <!-- Corner widget preview -->
+      <div class="pv-corner-wrap hidden" id="previewCornerWrap">
+        <div class="pv-corner">
+          <div class="pvc-team">
+            <div class="pvc-logo-wrap" id="pvcHomeLogoWrap">
+              <img class="pvc-logo" id="pvcHomeLogo" src="" alt="" onerror="this.closest('.pvc-logo-wrap').style.display='none'">
+            </div>
+            <div class="pvc-name" id="pvcHomeName">HOME</div>
+          </div>
+          <div class="pvc-score-panel">
+            <div class="pvc-nums">
+              <span class="pvc-num" id="pvcHomeScore">0</span>
+              <span class="pvc-sep">:</span>
+              <span class="pvc-num" id="pvcAwayScore">0</span>
+            </div>
+          </div>
+          <div class="pvc-team">
+            <div class="pvc-logo-wrap" id="pvcAwayLogoWrap">
+              <img class="pvc-logo" id="pvcAwayLogo" src="" alt="" onerror="this.closest('.pvc-logo-wrap').style.display='none'">
+            </div>
+            <div class="pvc-name" id="pvcAwayName">AWAY</div>
+          </div>
         </div>
       </div>
 
@@ -703,9 +790,10 @@
     <div class="card" id="mock-card" style="border-color:#d97706;background:rgba(217,119,6,0.06);">
       <div class="card__title" style="color:#d97706;">⚙ Dev: Mock Match</div>
       <p style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
-        Simulates a live match using in-memory data — no real URL needed.
-        The overlays pick up mock data automatically.
-        <strong style="color:var(--text2);">Resets when the server restarts.</strong>
+        Simulates a live match using in-memory data.
+        <strong style="color:var(--text2);">When a Game URL is configured, team names and logos are pulled from it automatically.</strong>
+        Fill in below only if you want to override them, or if no Game URL is set.
+        Resets when the server restarts.
       </p>
 
       <!-- Status indicator -->
@@ -718,12 +806,12 @@
       <!-- Team name inputs -->
       <div class="overrides-grid" style="margin-bottom:14px;">
         <div class="field">
-          <label for="mock-home-name">Home team name</label>
-          <input type="text" id="mock-home-name" placeholder="HOME TEAM">
+          <label for="mock-home-name">Home team name <span id="mock-home-source" style="font-size:10px;font-weight:600;color:#22c55e;margin-left:4px;"></span></label>
+          <input type="text" id="mock-home-name" placeholder="Auto from Game URL">
         </div>
         <div class="field">
-          <label for="mock-away-name">Away team name</label>
-          <input type="text" id="mock-away-name" placeholder="AWAY TEAM">
+          <label for="mock-away-name">Away team name <span id="mock-away-source" style="font-size:10px;font-weight:600;color:#22c55e;margin-left:4px;"></span></label>
+          <input type="text" id="mock-away-name" placeholder="Auto from Game URL">
         </div>
       </div>
 
@@ -815,6 +903,8 @@
 
         // Logo background
         document.getElementById('logoBackground').checked = data.logoBackground !== false;
+        updatePreviewLogoBg();
+        updatePreviewLayout();
 
         // Goal overlay settings
         const go = data.goalOverlay || {};
@@ -878,9 +968,11 @@
       const pvAwayLogo = document.getElementById('pvAwayLogo');
 
       pvHomeLogo.src   = proxyUrl(data.homeTeam.logo);
-      pvHomeLogo.style.display = data.homeTeam.logo ? '' : 'none';
+      const pvHomeWrap = document.getElementById('pvHomeLogoWrap');
+      if (pvHomeWrap) pvHomeWrap.style.display = data.homeTeam.logo ? '' : 'none';
       pvAwayLogo.src   = proxyUrl(data.awayTeam.logo);
-      pvAwayLogo.style.display = data.awayTeam.logo ? '' : 'none';
+      const pvAwayWrap = document.getElementById('pvAwayLogoWrap');
+      if (pvAwayWrap) pvAwayWrap.style.display = data.awayTeam.logo ? '' : 'none';
 
       document.getElementById('pvHomeScore').textContent = data.homeScore;
       document.getElementById('pvAwayScore').textContent = data.awayScore;
@@ -903,9 +995,33 @@
       addMeta(data.datetime, false);
       if (data.location) addMeta('📍 ' + data.location, false);
 
+      // Corner preview
+      document.getElementById('pvcHomeName').textContent = data.homeTeam.name || '—';
+      document.getElementById('pvcAwayName').textContent = data.awayTeam.name || '—';
+      const pvcHomeLogo = document.getElementById('pvcHomeLogo');
+      const pvcAwayLogo = document.getElementById('pvcAwayLogo');
+      const pvcHomeWrap = document.getElementById('pvcHomeLogoWrap');
+      const pvcAwayWrap = document.getElementById('pvcAwayLogoWrap');
+      pvcHomeLogo.src = proxyUrl(data.homeTeam.logo);
+      if (pvcHomeWrap) pvcHomeWrap.style.display = data.homeTeam.logo ? '' : 'none';
+      pvcAwayLogo.src = proxyUrl(data.awayTeam.logo);
+      if (pvcAwayWrap) pvcAwayWrap.style.display = data.awayTeam.logo ? '' : 'none';
+      document.getElementById('pvcHomeScore').textContent = data.homeScore;
+      document.getElementById('pvcAwayScore').textContent = data.awayScore;
+
+      updatePreviewLayout();
+
       // Populate override fields only if they are currently empty
       if (!val('homeTeamName')) set('homeTeamName', data.homeTeam.name);
       if (!val('awayTeamName')) set('awayTeamName', data.awayTeam.name);
+
+      // Pre-populate mock team fields from game URL data
+      set('mock-home-name', data.homeTeam.name || '');
+      set('mock-away-name', data.awayTeam.name || '');
+      const homeSourceEl = document.getElementById('mock-home-source');
+      const awaySourceEl = document.getElementById('mock-away-source');
+      if (homeSourceEl) homeSourceEl.textContent = data.homeTeam.name ? '(from Game URL)' : '';
+      if (awaySourceEl) awaySourceEl.textContent = data.awayTeam.name ? '(from Game URL)' : '';
     }
 
     // ── Save ─────────────────────────────────────────────────────────────────
@@ -988,7 +1104,27 @@
       makecopier('copyGoalBtn', goalUrl);
     }
 
+    function updatePreviewLogoBg() {
+      const noBg = !document.getElementById('logoBackground').checked;
+      document.querySelectorAll('.preview-logo-wrap, .pvc-logo-wrap').forEach(el => {
+        el.classList.toggle('no-bg', noBg);
+      });
+    }
+
+    function updatePreviewLayout() {
+      const tpl    = document.querySelector('input[name="template"]:checked')?.value || 'bar';
+      const bar    = document.getElementById('previewBarBoard');
+      const corner = document.getElementById('previewCornerWrap');
+      if (bar)    bar.classList.toggle('hidden', tpl !== 'bar');
+      if (corner) corner.classList.toggle('hidden', tpl !== 'corner');
+    }
+
     // ── Wire events ───────────────────────────────────────────────────────────
+
+    document.getElementById('logoBackground').addEventListener('change', updatePreviewLogoBg);
+    document.querySelectorAll('input[name="template"]').forEach(radio => {
+      radio.addEventListener('change', updatePreviewLayout);
+    });
 
     document.getElementById('previewBtn').addEventListener('click', () => {
       const url = val('gameUrl');
@@ -1079,13 +1215,18 @@
     }
 
     async function mockEnable() {
-      const homeName = document.getElementById('mock-home-name').value.trim() || 'HOME TEAM';
-      const awayName = document.getElementById('mock-away-name').value.trim() || 'AWAY TEAM';
+      // Only send team name overrides if the user typed something in the fields
+      // If empty, the server will pull from the configured game URL automatically
+      const homeName = document.getElementById('mock-home-name').value.trim();
+      const awayName = document.getElementById('mock-away-name').value.trim();
       const interval = Number(document.getElementById('mock-auto-interval').value) || 0;
+      const body = { autoInterval: interval };
+      if (homeName) body.homeTeam = { name: homeName };
+      if (awayName) body.awayTeam = { name: awayName };
       try {
         const res = await fetch('/api/mock/enable', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ homeTeam: { name: homeName }, awayTeam: { name: awayName }, autoInterval: interval })
+          body: JSON.stringify(body)
         });
         const data = await res.json();
         applyMockState(data.state);

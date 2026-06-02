@@ -116,12 +116,21 @@
     .bar-logo-wrap.no-bg .bar-logo { filter: drop-shadow(0 2px 8px rgba(0,0,0,.6)); }
     .bar-logo { width: 100%; height: 100%; object-fit: contain; }
 
+    .bar-team__info {
+      display: flex; flex-direction: column; gap: 3px; min-width: 0;
+    }
     .bar-team__name {
       font-size: clamp(16px, 1.6vw, 24px);
       font-weight: 800; color: #f1f5f9;
       letter-spacing: 1.5px; text-transform: uppercase;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       text-shadow: 0 2px 10px rgba(0,0,0,.5); line-height: 1;
+    }
+    .bar-team__city {
+      font-size: clamp(10px, 1vw, 13px); font-weight: 600;
+      color: rgba(255,255,255,.4); letter-spacing: 1px;
+      text-transform: uppercase; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
     }
 
     .bar-score {
@@ -195,8 +204,15 @@
       color: #fff;
       font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
       text-transform: uppercase; text-align: center;
-      padding: 6px 8px;
+      padding: 5px 8px;
+      overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+    }
+    .ct-city {
+      font-size: 8px; font-weight: 600; letter-spacing: 1px;
+      color: rgba(255,255,255,.5); text-transform: uppercase;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      width: 100%; text-align: center;
     }
 
     /* Score center */
@@ -254,7 +270,10 @@
 
       <!-- Home team -->
       <div class="bar-team bar-team--home">
-        <span class="bar-team__name" id="b-homeName">—</span>
+        <div class="bar-team__info">
+          <span class="bar-team__name" id="b-homeName">—</span>
+          <span class="bar-team__city" id="b-homeCity"></span>
+        </div>
         <div class="bar-logo-wrap logo-wrap" id="b-homeLogoWrap">
           <img class="bar-logo" id="b-homeLogo" src="" alt=""
                onerror="this.closest('.bar-logo-wrap').style.display='none'">
@@ -279,7 +298,10 @@
           <img class="bar-logo" id="b-awayLogo" src="" alt=""
                onerror="this.closest('.bar-logo-wrap').style.display='none'">
         </div>
-        <span class="bar-team__name" id="b-awayName">—</span>
+        <div class="bar-team__info">
+          <span class="bar-team__name" id="b-awayName">—</span>
+          <span class="bar-team__city" id="b-awayCity"></span>
+        </div>
       </div>
 
       <!-- Match info -->
@@ -308,7 +330,10 @@
           <img class="ct-logo" id="c-homeLogo" src="" alt=""
                onerror="this.style.display='none'">
         </div>
-        <div class="ct-name" id="c-homeName">HOME</div>
+        <div class="ct-name">
+          <span id="c-homeName">HOME</span>
+          <span class="ct-city" id="c-homeCity"></span>
+        </div>
       </div>
 
       <!-- Score -->
@@ -330,7 +355,10 @@
           <img class="ct-logo" id="c-awayLogo" src="" alt=""
                onerror="this.style.display='none'">
         </div>
-        <div class="ct-name" id="c-awayName">AWAY</div>
+        <div class="ct-name">
+          <span id="c-awayName">AWAY</span>
+          <span class="ct-city" id="c-awayCity"></span>
+        </div>
       </div>
 
       <!-- Live dot -->
@@ -418,6 +446,8 @@
     function renderBar(d, flashHome, flashAway) {
       $('b-homeName').textContent = d.homeTeam.name || '—';
       $('b-awayName').textContent = d.awayTeam.name || '—';
+      $('b-homeCity').textContent = d.homeTeam.city || '';
+      $('b-awayCity').textContent = d.awayTeam.city || '';
       setLogo('b-homeLogoWrap', 'b-homeLogo', d.homeTeam.logo);
       setLogo('b-awayLogoWrap', 'b-awayLogo', d.awayTeam.logo);
 
@@ -445,6 +475,8 @@
     function renderCorner(d, flashHome, flashAway) {
       $('c-homeName').textContent = d.homeTeam.name || '—';
       $('c-awayName').textContent = d.awayTeam.name || '—';
+      $('c-homeCity').textContent = d.homeTeam.city || '';
+      $('c-awayCity').textContent = d.awayTeam.city || '';
       setLogo('c-homeLogoWrap', 'c-homeLogo', d.homeTeam.logo);
       setLogo('c-awayLogoWrap', 'c-awayLogo', d.awayTeam.logo);
 
