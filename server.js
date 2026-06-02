@@ -29,7 +29,9 @@ const DEFAULT_SETTINGS = {
   goalOverlay: {
     displayDuration: 8,
     bgColor: '#0a0d1a',
-    accentColor: '#e63946',
+    accentColor: '#16a34a',
+    cardAccentColor: '#f5c518',
+    redCardAccentColor: '#dc2626',
     textColor: '#f1f5f9'
   }
 };

@@ -1,0 +1,10 @@
+services:
+  obs-overlay-it-cup-2026:
+    build: .
+    ports:
+      - "3042:3042"
+    volumes:
+      - ./settings.json:/app/settings.json
+    restart: unless-stopped
+    environment:
+      - PORT=3042

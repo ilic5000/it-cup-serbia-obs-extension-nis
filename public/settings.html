@@ -525,6 +525,80 @@
     .toggle-row:has(input:checked) .toggle::after { transform: translateX(16px); }
     .toggle-label-text { font-size: 13px; color: var(--text2); }
 
+    /* ── Goal overlay preview ────────────────────────────────────────────── */
+    .gop-wrap {
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.6);
+    }
+    .gop-bar {
+      display: flex;
+      align-items: stretch;
+      min-height: 100px;
+      position: relative;
+      overflow: hidden;
+    }
+    .gop-bar::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(-55deg, transparent, transparent 20px, rgba(255,255,255,.012) 20px, rgba(255,255,255,.012) 21px);
+      pointer-events: none;
+    }
+    .gop-badge {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 5px; padding: 12px 18px; min-width: 110px; flex-shrink: 0;
+      position: relative; z-index: 1;
+    }
+    .gop-badge::after {
+      content: '';
+      position: absolute; right: -18px; top: 0; bottom: 0; width: 36px;
+      clip-path: polygon(0 0, 0% 100%, 100% 100%);
+      z-index: -1;
+    }
+    .gop-badge-icon { width: 36px; height: 36px; }
+    .gop-badge-text { font-size: 13px; font-weight: 900; color: #fff; letter-spacing: 3px; text-transform: uppercase; }
+    .gop-logo-wrap {
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 14px 10px 28px; flex-shrink: 0;
+      border-right: 1px solid rgba(255,255,255,.07);
+      transition: background .2s ease;
+    }
+    .gop-logo-wrap.has-bg { background: #ffffff; }
+    .gop-logo { width: 58px; height: 46px; object-fit: contain; }
+    .gop-player {
+      display: flex; align-items: center; gap: 14px;
+      flex: 1; min-width: 0; padding: 12px 22px;
+    }
+    .gop-photo-wrap {
+      width: 68px; height: 76px; flex-shrink: 0;
+      border-radius: 4px; border: 2px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gop-photo-placeholder { width: 36px; height: 36px; opacity: .2; }
+    .gop-player-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .gop-player-num  { font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+    .gop-player-name { font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gop-player-team { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: 1.5px; }
+    .gop-info {
+      display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+      gap: 6px; padding: 12px 28px 12px 18px; flex-shrink: 0;
+      border-left: 1px solid rgba(255,255,255,.07);
+    }
+    .gop-minute { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.5); letter-spacing: 1px; }
+    .gop-score  { font-size: 36px; font-weight: 900; color: #fff; letter-spacing: 2px; line-height: 1; }
+    .gop-tab-row {
+      display: flex; gap: 6px; margin-bottom: 12px;
+    }
+    .gop-tab {
+      padding: 5px 14px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text2);
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s ease;
+    }
+    .gop-tab:hover { border-color: rgba(255,255,255,.3); color: var(--text); }
+    .gop-tab.active { background: var(--surface); border-color: var(--text2); color: var(--text); }
+
     a { color: var(--red); text-decoration: none; }
     a:hover { text-decoration: underline; }
   </style>
@@ -736,14 +810,94 @@
                  style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
         </div>
         <div class="field">
-          <label for="goalAccentColor">Accent color (badge &amp; border)</label>
-          <input type="color" id="goalAccentColor" value="#e63946"
-                 style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
-        </div>
-        <div class="field">
           <label for="goalTextColor">Text color</label>
           <input type="color" id="goalTextColor" value="#f1f5f9"
                  style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
+        </div>
+      </div>
+      <p style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin:14px 0 8px;">Accent color (badge &amp; border) per event</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 20px;">
+        <div class="field">
+          <label for="goalAccentColor">⚽ Goal</label>
+          <input type="color" id="goalAccentColor" value="#16a34a"
+                 style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
+        </div>
+        <div class="field">
+          <label for="goalCardAccentColor">🟨 Yellow card</label>
+          <input type="color" id="goalCardAccentColor" value="#f5c518"
+                 style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
+        </div>
+        <div class="field">
+          <label for="goalRedCardAccentColor">🟥 Red card</label>
+          <input type="color" id="goalRedCardAccentColor" value="#dc2626"
+                 style="width:100%;height:40px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Goal Scorer Preview ── -->
+    <div class="card">
+      <div class="card__title">Goal Scorer Overlay — Preview</div>
+
+      <div class="gop-tab-row">
+        <button class="gop-tab active" data-gop-type="goal">⚽ Goal</button>
+        <button class="gop-tab" data-gop-type="card">🟨 Yellow Card</button>
+        <button class="gop-tab" data-gop-type="red-card">🟥 Red Card</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+        <a id="gopPreviewLinkGoal"    href="/goal-overlay.html?preview=goal"     target="_blank" class="btn btn-ghost" style="font-size:11px;padding:4px 10px;text-decoration:none;">Open Goal Preview ↗</a>
+        <a id="gopPreviewLinkCard"    href="/goal-overlay.html?preview=card"     target="_blank" class="btn btn-ghost" style="font-size:11px;padding:4px 10px;text-decoration:none;">Open Card Preview ↗</a>
+        <a id="gopPreviewLinkRedCard" href="/goal-overlay.html?preview=red-card" target="_blank" class="btn btn-ghost" style="font-size:11px;padding:4px 10px;text-decoration:none;">Open Red Card Preview ↗</a>
+      </div>
+
+      <div class="gop-wrap">
+        <div class="gop-bar" id="gop-bar">
+          <!-- Badge -->
+          <div class="gop-badge" id="gop-badge">
+            <!-- Goal ball -->
+            <svg class="gop-badge-icon" id="gop-icon-goal" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+              <path fill="#c8c8c8" d="M63.95 4.06c-35.52-.5-61.9 29.92-60.13 62.45c2.09 38.31 29.48 57.56 61.52 57.34c33.66-.23 59.2-24.09 58.5-60.13c-.69-35.98-27.15-59.19-59.89-59.66"/>
+              <path fill="#fff" d="M35.86 15.21C11 29.46-4.78 69.85 21.7 100.41c3.24 3.74 8.39 6.35 12.3 8.13c26.7 12.07 59.01-6.49 71.51-20.64c9.92-11.23 13.57-18.68 12.39-34.01c-.91-11.92-6.01-23.43-16.58-31.94c-23.9-19.28-49.67-15.8-65.46-6.74"/>
+              <path fill="#171717" d="M60.9 39.79c-.09-.05-9.34-5.36-16.52-8.02c-7.48-2.77-13-4.26-13.06-4.27l1.03-3.86c.23.06 5.75 1.54 13.42 4.39c7.5 2.78 16.74 8.08 17.13 8.31zm16.267-10.436L82.61 9.932l3.852 1.079l-5.442 19.422zM117.6 54.52c-.05-.02-5.37-2.04-11.31-3.65c-4.47-1.21-10.23-2.44-10.29-2.45l.83-3.91c.24.05 5.92 1.26 10.5 2.5c6.15 1.66 11.47 3.69 11.7 3.77zM86.13 93.76c0-.06-.5-6.16-1.7-12.4c-1.19-6.16-3.46-11.96-3.48-12.01l3.72-1.47c.1.25 2.43 6.19 3.69 12.73c1.24 6.47 1.74 12.58 1.76 12.84zm19.89 5.56l-2.64-3.01c.04-.03 3.88-3.43 8.62-9.83c4.38-5.92 6.4-11.1 6.42-11.16l3.73 1.43c-.09.23-2.24 5.75-6.94 12.1c-5.01 6.78-9.02 10.32-9.19 10.47M32.847 78.88L55.99 58.223l2.664 2.984L35.51 81.864zM12.91 73.35c-.06-.39-1.38-9.64-1.38-18.1c0-8.44.96-16.25 1.01-16.58l3.97.5c-.01.08-.97 7.9-.97 16.08c0 8.16 1.33 17.44 1.34 17.53zm58.39 40.3c-.25-.03-6.35-.8-16.9-3.9c-6.72-1.98-14.4-6.04-14.73-6.21l1.88-3.53c.08.04 7.65 4.05 13.98 5.91c10.2 3 16.2 3.76 16.26 3.77z"/>
+              <path fill="#474c4f" d="M53.37 32.72c-.31.78.1 28.63.73 29.46s28.63 10.34 29.88 10.03s16.19-23.82 16.19-24.76s-18.38-23.61-19.32-23.82s-27.06 8.04-27.48 9.09m63.99 3.42s-4.12 13.71-4.12 14.76c0 1.04 2.51 6.79 3.66 13.89s-.52 17.76.21 18.18s4.35.21 4.35.21s3.49-10.97 2.02-25.07c-1.47-14.11-6.12-21.97-6.12-21.97M87.64 90.7c-.84.08-22.88 19.01-22.78 19.54c.1.52 8.63 13.09 8.63 13.09s10.72-.85 20.54-6.17s13.55-10.05 13.55-10.05s1.36-12.64.84-12.74c-.51-.12-19.73-3.77-20.78-3.67M14.09 67.09c-.57.47-3.87 7.73-4.81 11.81c-.94 4.07-1.46 7.94-1.46 7.94s2.51 7.26 6.27 12.64c4.66 6.66 10.72 11.36 10.72 11.36s19.78-6.03 19.89-6.87s-2.3-8.15-3.97-14.21s-1.98-12.85-2.61-13.27s-7-2.4-12.01-4.39s-11.39-5.53-12.02-5.01m-6.2-25.21s5.47 4.73 6.31 4.73s6.14-7.02 11.49-11.28c7.21-5.75 10.76-7.63 10.87-8.36c.1-.73 3.24-18.18 3.24-18.18s-11.6 4.39-20.06 14.1S7.89 41.88 7.89 41.88M67.05 4.13s6.67 3.43 9.1 5.12s6.01 5.27 7.07 5.38c1.05.11 15.56.12 15.56.12s-6.58-4.5-13.87-7.08c-8.77-3.11-17.86-3.54-17.86-3.54"/>
+            </svg>
+            <!-- Yellow card -->
+            <svg class="gop-badge-icon" id="gop-icon-card" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 76" style="display:none">
+              <rect x="3" y="3" width="48" height="70" rx="5" fill="#fff" opacity=".88" stroke="rgba(0,0,0,.2)" stroke-width="2"/>
+            </svg>
+            <!-- Red card -->
+            <svg class="gop-badge-icon" id="gop-icon-red-card" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 76" style="display:none">
+              <rect x="3" y="3" width="48" height="70" rx="5" fill="#fff" opacity=".88" stroke="rgba(0,0,0,.2)" stroke-width="2"/>
+            </svg>
+            <span class="gop-badge-text" id="gop-badge-label">GOL!</span>
+          </div>
+
+          <!-- Team logo -->
+          <div class="gop-logo-wrap" id="gop-logo-wrap">
+            <img class="gop-logo" id="gop-logo" src="" alt=""
+                 onerror="this.closest('.gop-logo-wrap').style.display='none'">
+          </div>
+
+          <!-- Player -->
+          <div class="gop-player">
+            <div class="gop-photo-wrap">
+              <!-- placeholder silhouette -->
+              <svg class="gop-photo-placeholder" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+              </svg>
+            </div>
+            <div class="gop-player-info">
+              <span class="gop-player-num"  id="gop-player-num" style="color:var(--gop-accent)">#10</span>
+              <span class="gop-player-name" id="gop-player-name" style="color:var(--gop-text)">MARKO PETROVIĆ</span>
+              <span class="gop-player-team" id="gop-player-team">EXEFEED NIŠ</span>
+            </div>
+          </div>
+
+          <!-- Score/minute -->
+          <div class="gop-info">
+            <span class="gop-minute" id="gop-minute">45'</span>
+            <span class="gop-score"  id="gop-score">1 - 0</span>
+          </div>
         </div>
       </div>
     </div>
@@ -780,6 +934,7 @@
       <p class="obs-hint">
         Add as a separate Browser Source: <strong>1920 × 1080 px</strong> — full canvas.<br>
         The card slides up from the bottom when a new goal is scored.<br>
+        Settings changes are picked up automatically within ~10 seconds.<br>
         Enable <em>"Refresh browser when scene becomes active"</em>.
       </p>
     </div>
@@ -905,13 +1060,16 @@
         document.getElementById('logoBackground').checked = data.logoBackground !== false;
         updatePreviewLogoBg();
         updatePreviewLayout();
+        updateGopPreview();
 
         // Goal overlay settings
         const go = data.goalOverlay || {};
         set('goalDisplayDuration', go.displayDuration || 8);
-        document.getElementById('goalBgColor').value     = go.bgColor     || '#0a0d1a';
-        document.getElementById('goalAccentColor').value = go.accentColor || '#e63946';
-        document.getElementById('goalTextColor').value   = go.textColor   || '#f1f5f9';
+        document.getElementById('goalBgColor').value            = go.bgColor            || '#0a0d1a';
+        document.getElementById('goalAccentColor').value         = go.accentColor         || '#16a34a';
+        document.getElementById('goalCardAccentColor').value     = go.cardAccentColor     || '#f5c518';
+        document.getElementById('goalRedCardAccentColor').value  = go.redCardAccentColor  || '#dc2626';
+        document.getElementById('goalTextColor').value           = go.textColor           || '#f1f5f9';
 
         const ov = data.overrides || {};
         set('homeTeamName', ov.homeTeamName || '');
@@ -950,6 +1108,7 @@
         renderPreview(data);
         document.getElementById('previewSection').classList.remove('hidden');
         showStatus('previewStatus', '✓ Game data loaded successfully.', 'success');
+        updateGopPreview();
 
       } catch (err) {
         showStatus('previewStatus', `Connection error: ${err.message}`, 'error');
@@ -1052,10 +1211,12 @@
           awayTeamLogo: val('awayTeamLogo')
         },
         goalOverlay: {
-          displayDuration: Number(val('goalDisplayDuration')) || 8,
-          bgColor:          document.getElementById('goalBgColor').value,
-          accentColor:      document.getElementById('goalAccentColor').value,
-          textColor:        document.getElementById('goalTextColor').value
+          displayDuration:    Number(val('goalDisplayDuration')) || 8,
+          bgColor:            document.getElementById('goalBgColor').value,
+          accentColor:        document.getElementById('goalAccentColor').value,
+          cardAccentColor:    document.getElementById('goalCardAccentColor').value,
+          redCardAccentColor: document.getElementById('goalRedCardAccentColor').value,
+          textColor:          document.getElementById('goalTextColor').value
         }
       };
 
@@ -1109,6 +1270,8 @@
       document.querySelectorAll('.preview-logo-wrap, .pvc-logo-wrap').forEach(el => {
         el.classList.toggle('no-bg', noBg);
       });
+      // also update goal overlay preview
+      updateGopPreview();
     }
 
     function updatePreviewLayout() {
@@ -1118,6 +1281,97 @@
       if (bar)    bar.classList.toggle('hidden', tpl !== 'bar');
       if (corner) corner.classList.toggle('hidden', tpl !== 'corner');
     }
+
+    // ── Goal overlay live preview ─────────────────────────────────────────────
+
+    let gopCurrentType = 'goal';
+
+    const GOP_TYPES = {
+      goal:     { label: 'GOL!',             score: '1 - 0', minute: "45'" },
+      card:     { label: 'ŽUTI\nKARTON',     score: '',      minute: "32'" },
+      'red-card': { label: 'CRVENI\nKARTON', score: '',      minute: "67'" },
+    };
+
+    function updateGopPreview() {
+      const bg     = document.getElementById('goalBgColor').value || '#0a0d1a';
+      const accent = gopCurrentType === 'card'
+                     ? (document.getElementById('goalCardAccentColor').value    || '#f5c518')
+                     : gopCurrentType === 'red-card'
+                       ? (document.getElementById('goalRedCardAccentColor').value || '#dc2626')
+                       : (document.getElementById('goalAccentColor').value        || '#16a34a');
+      const text   = document.getElementById('goalTextColor').value   || '#f1f5f9';
+      const logoBg = document.getElementById('logoBackground').checked;
+
+      const bar   = document.getElementById('gop-bar');
+      const badge = document.getElementById('gop-badge');
+
+      bar.style.background   = `linear-gradient(100deg, ${bg} 0%, color-mix(in srgb, ${bg} 80%, #fff 20%) 50%, ${bg} 100%)`;
+      bar.style.borderTop    = `3px solid ${accent}`;
+      badge.style.background = `linear-gradient(135deg, ${accent} 0%, color-mix(in srgb, ${accent} 70%, #000 30%) 100%)`;
+      badge.style.setProperty('--gop-after-bg', accent);
+
+      // Update badge pseudo-element colour via inline CSS trick using a style tag
+      let styleTag = document.getElementById('gop-badge-after-style');
+      if (!styleTag) {
+        styleTag = document.createElement('style');
+        styleTag.id = 'gop-badge-after-style';
+        document.head.appendChild(styleTag);
+      }
+      styleTag.textContent = `#gop-badge::after { background: linear-gradient(135deg, ${accent} 0%, color-mix(in srgb, ${accent} 70%, #000 30%) 100%) !important; }`;
+
+      document.getElementById('gop-player-num').style.color  = accent;
+      document.getElementById('gop-player-name').style.color = text;
+
+      // icons
+      document.getElementById('gop-icon-goal').style.display     = gopCurrentType === 'goal'     ? '' : 'none';
+      document.getElementById('gop-icon-card').style.display     = gopCurrentType === 'card'     ? '' : 'none';
+      document.getElementById('gop-icon-red-card').style.display = gopCurrentType === 'red-card' ? '' : 'none';
+
+      // badge label
+      const info = GOP_TYPES[gopCurrentType];
+      const labelEl = document.getElementById('gop-badge-label');
+      labelEl.style.whiteSpace = gopCurrentType === 'goal' ? '' : 'pre-line';
+      labelEl.style.fontSize   = gopCurrentType === 'goal' ? '' : '10px';
+      labelEl.style.lineHeight = gopCurrentType === 'goal' ? '' : '1.3';
+      labelEl.style.textAlign  = 'center';
+      labelEl.textContent = info.label;
+
+      // score/minute
+      document.getElementById('gop-minute').textContent = info.minute;
+      document.getElementById('gop-score').textContent  = info.score;
+      document.getElementById('gop-score').style.display = gopCurrentType === 'goal' ? '' : 'none';
+
+      // team logo from preview data (if available)
+      const gopLogoWrap = document.getElementById('gop-logo-wrap');
+      const gopLogo     = document.getElementById('gop-logo');
+      const pvHomeLogo  = document.getElementById('pvHomeLogo');
+      if (pvHomeLogo && pvHomeLogo.src && !pvHomeLogo.src.endsWith('/')) {
+        gopLogo.src = pvHomeLogo.src;
+        gopLogoWrap.style.display = '';
+      } else {
+        gopLogoWrap.style.display = 'none';
+      }
+      gopLogoWrap.classList.toggle('has-bg', logoBg);
+
+      // player team name from preview data (if available)
+      const pvHome = document.getElementById('pvHomeName');
+      if (pvHome && pvHome.textContent && pvHome.textContent !== '—') {
+        document.getElementById('gop-player-team').textContent = pvHome.textContent;
+      }
+    }
+
+    document.querySelectorAll('.gop-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.gop-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        gopCurrentType = tab.dataset.gopType;
+        updateGopPreview();
+      });
+    });
+
+    ['goalBgColor','goalAccentColor','goalCardAccentColor','goalRedCardAccentColor','goalTextColor'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateGopPreview);
+    });
 
     // ── Wire events ───────────────────────────────────────────────────────────
 
