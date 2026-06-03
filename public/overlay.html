@@ -250,6 +250,22 @@
     }
 
     .hidden { display: none !important; }
+
+    /* ── Timer display ─────────────────────────────────────────────────── */
+    .bar-timer {
+      font-size: 13px; font-weight: 700;
+      color: rgba(255,255,255,.5);
+      letter-spacing: 2.5px;
+      font-variant-numeric: tabular-nums;
+      text-align: center; margin-top: 1px;
+    }
+    .cs-timer {
+      font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,.75);
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -290,6 +306,7 @@
         <div class="bar-penalties hidden" id="b-penalties">
           Penali: <span id="b-penaltiesScore">0–0</span>
         </div>
+        <div class="bar-timer hidden" id="b-timer">00:00</div>
       </div>
 
       <!-- Away team -->
@@ -347,6 +364,7 @@
           <span class="cs-round"  id="c-round"></span>
           <span class="cs-season" id="c-season"></span>
         </div>
+        <div class="cs-timer hidden" id="c-timer">00:00</div>
       </div>
 
       <!-- Away team -->
@@ -375,6 +393,8 @@
     let pollTimer       = null;
     let prevHomeScore   = null;
     let prevAwayScore   = null;
+    let timerLocal      = null;
+    let timerDispInt    = null;
 
     const $ = (id) => document.getElementById(id);
 
@@ -396,7 +416,44 @@
         if (dot) ok ? dot.classList.remove('error') : dot.classList.add('error');
       });
     }
+    // ── Timer ──────────────────────────────────────────────────────────────────
 
+    function formatMs(ms) {
+      const s = Math.floor(Math.max(0, ms) / 1000);
+      return `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+    }
+
+    function updateTimerDisplay() {
+      if (!timerLocal) return;
+      const { currentMs, running, direction, show, receivedAt } = timerLocal;
+      let displayMs = currentMs;
+      if (running) {
+        const elapsed = Date.now() - receivedAt;
+        displayMs = direction === 'down'
+          ? Math.max(0, currentMs - elapsed)
+          : currentMs + elapsed;
+      }
+      const text = formatMs(displayMs);
+      const hide = !show;
+      $('b-timer').textContent = text;
+      $('b-timer').classList.toggle('hidden', hide);
+      $('c-timer').textContent = text;
+      $('c-timer').classList.toggle('hidden', hide);
+    }
+
+    async function fetchTimer() {
+      try {
+        const res = await fetch('/api/timer');
+        if (!res.ok) return;
+        const d = await res.json();
+        timerLocal = { ...d, receivedAt: Date.now() };
+        updateTimerDisplay();
+      } catch (_) {}
+    }
+
+    function scheduleTimerPoll() {
+      setTimeout(async () => { await fetchTimer(); scheduleTimerPoll(); }, 1000);
+    }
     // ── Settings ────────────────────────────────────────────────────────────
 
     function applySettings(s) {
@@ -528,8 +585,11 @@
 
     async function init() {
       await fetchSettings();
+      await fetchTimer();
+      timerDispInt = setInterval(updateTimerDisplay, 250);
       tick();
       scheduleSettingsRefresh();
+      scheduleTimerPoll();
     }
 
     init();

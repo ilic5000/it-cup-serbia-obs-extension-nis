@@ -157,6 +157,24 @@ let mockState = {
 };
 let _autoGoalTimer = null;
 
+// ── Timer state ──────────────────────────────────────────────────────────────────
+// Purely in-memory — resets on server restart, never persisted to settings.json
+
+let timerState = {
+  show:      false,
+  direction: 'up',   // 'up' | 'down'
+  initialMs: 0,      // starting value in ms (set by /configure)
+  elapsedMs: 0,      // accumulated ms when last paused
+  startedAt: null,   // Date.now() when last started; null = paused/stopped
+};
+
+function timerCurrentMs() {
+  const elapsed = timerState.elapsedMs +
+    (timerState.startedAt !== null ? (Date.now() - timerState.startedAt) : 0);
+  if (timerState.direction === 'down') return Math.max(0, timerState.initialMs - elapsed);
+  return timerState.initialMs + elapsed;
+}
+
 function mockAddGoal(team) {
   const isAway  = team === 'away';
   const players = isAway ? MOCK_AWAY_PLAYERS : MOCK_HOME_PLAYERS;
@@ -319,7 +337,75 @@ app.post('/api/mock/auto', (req, res) => {
   console.log(`[Mock] Auto-goal interval set to ${mockState.autoInterval}s`);
   res.json({ success: true, autoInterval: mockState.autoInterval });
 });
+// ── Timer routes ──────────────────────────────────────────────────────────────────
 
+app.get('/api/timer', (_req, res) => {
+  res.json({
+    show:      timerState.show,
+    direction: timerState.direction,
+    initialMs: timerState.initialMs,
+    running:   timerState.startedAt !== null,
+    currentMs: timerCurrentMs(),
+  });
+});
+
+// Set direction + start time, stop if running, reset elapsed
+app.post('/api/timer/configure', (req, res) => {
+  const { direction, minutes, seconds } = req.body || {};
+  if (timerState.startedAt !== null) {
+    timerState.elapsedMs += Date.now() - timerState.startedAt;
+    timerState.startedAt = null;
+  }
+  timerState.elapsedMs = 0;
+  if (direction === 'up' || direction === 'down') timerState.direction = direction;
+  const mins = Math.max(0, Number(minutes) || 0);
+  const secs = Math.max(0, Math.min(59, Number(seconds) || 0));
+  timerState.initialMs = (mins * 60 + secs) * 1000;
+  res.json({ success: true, running: false, currentMs: timerCurrentMs() });
+});
+
+app.post('/api/timer/start', (_req, res) => {
+  if (timerState.startedAt === null) {
+    if (timerState.direction === 'down' && timerCurrentMs() === 0)
+      return res.json({ success: false, reason: 'Countdown already at zero', currentMs: 0 });
+    timerState.startedAt = Date.now();
+    timerState.show = true;
+  }
+  res.json({ success: true, running: true, currentMs: timerCurrentMs() });
+});
+
+app.post('/api/timer/pause', (_req, res) => {
+  if (timerState.startedAt !== null) {
+    timerState.elapsedMs += Date.now() - timerState.startedAt;
+    timerState.startedAt = null;
+  }
+  res.json({ success: true, running: false, currentMs: timerCurrentMs() });
+});
+
+app.post('/api/timer/reset', (_req, res) => {
+  const wasRunning = timerState.startedAt !== null;
+  timerState.elapsedMs = 0;
+  timerState.startedAt = wasRunning ? Date.now() : null;
+  res.json({ success: true, running: wasRunning, currentMs: timerCurrentMs() });
+});
+
+// Nudge the displayed time by delta (positive = add time, negative = subtract)
+app.post('/api/timer/adjust', (req, res) => {
+  const { minutes = 0, seconds = 0 } = req.body || {};
+  const deltaMs = (Number(minutes) * 60 + Number(seconds)) * 1000;
+  if (timerState.direction === 'up') {
+    timerState.elapsedMs = Math.max(-timerState.initialMs, timerState.elapsedMs + deltaMs);
+  } else {
+    // countdown: positive delta adds displayed time → reduce elapsed
+    timerState.elapsedMs = Math.max(0, timerState.elapsedMs - deltaMs);
+  }
+  res.json({ success: true, currentMs: timerCurrentMs() });
+});
+
+app.post('/api/timer/show', (req, res) => {
+  timerState.show = !!(req.body || {}).show;
+  res.json({ success: true, show: timerState.show });
+});
 // ── API routes ────────────────────────────────────────────────────────────────
 
 // GET /api/settings — read current settings

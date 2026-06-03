@@ -941,6 +941,70 @@
 
     <hr class="divider" style="margin-top:28px">
 
+    <!-- ── Match Timer ── -->
+    <div class="card" id="timer-card">
+      <div class="card__title">⏱ Match Timer</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6;">
+        Independent overlay timer shown below the score. Start, pause, reset and nudge live—no Save needed.
+      </p>
+
+      <!-- Live display -->
+      <div id="timer-display"
+           style="font-size:46px;font-weight:900;color:#fff;letter-spacing:5px;font-variant-numeric:tabular-nums;text-align:center;padding:12px 0 10px;text-shadow:0 2px 18px rgba(0,0,0,.55);border-bottom:1px solid var(--border);margin-bottom:18px;">00:00</div>
+
+      <!-- Direction + start time -->
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
+        <div class="field">
+          <label>Direction</label>
+          <div style="display:flex;gap:18px;margin-top:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="radio" name="timerDir" id="timerDirUp" value="up" checked>
+              Count Up ▲
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="radio" name="timerDir" id="timerDirDown" value="down">
+              Count Down ▼
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Start at</label>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+            <input type="number" id="timerMinutes" min="0" max="999" value="0"
+                   style="width:64px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-size:16px;font-weight:700;padding:5px 8px;text-align:center;">
+            <span style="font-size:18px;font-weight:700;color:var(--text2);">:</span>
+            <input type="number" id="timerSeconds" min="0" max="59" value="0"
+                   style="width:56px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-size:16px;font-weight:700;padding:5px 8px;text-align:center;">
+          </div>
+        </div>
+        <button class="btn btn-ghost" id="timerApplyBtn" style="height:36px;">Apply</button>
+      </div>
+
+      <!-- Controls -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+        <button class="btn btn-primary" id="timerStartBtn">▶ Start</button>
+        <button class="btn btn-ghost"   id="timerPauseBtn">⏸ Pause</button>
+        <button class="btn btn-ghost"   id="timerResetBtn">↺ Reset</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);margin-left:auto;cursor:pointer;">
+          <input type="checkbox" id="timerShow" checked>
+          Show on overlay
+        </label>
+      </div>
+
+      <!-- Corrections -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-right:4px;flex-shrink:0;">Correct:</span>
+        <button class="btn btn-ghost" data-timer-adjust-min="1"   style="font-size:12px;padding:4px 10px;">+1 min</button>
+        <button class="btn btn-ghost" data-timer-adjust-min="-1"  style="font-size:12px;padding:4px 10px;">−1 min</button>
+        <button class="btn btn-ghost" data-timer-adjust-sec="10"  style="font-size:12px;padding:4px 10px;">+10 s</button>
+        <button class="btn btn-ghost" data-timer-adjust-sec="-10" style="font-size:12px;padding:4px 10px;">−10 s</button>
+        <button class="btn btn-ghost" data-timer-adjust-sec="1"   style="font-size:12px;padding:4px 10px;">+1 s</button>
+        <button class="btn btn-ghost" data-timer-adjust-sec="-1"  style="font-size:12px;padding:4px 10px;">−1 s</button>
+      </div>
+    </div>
+
+    <hr class="divider" style="margin-top:28px">
+
     <!-- ── Dev: Mock Match ── -->
     <div class="card" id="mock-card" style="border-color:#d97706;background:rgba(217,119,6,0.06);">
       <div class="card__title" style="color:#d97706;">⚙ Dev: Mock Match</div>
@@ -1586,6 +1650,143 @@
       // If already enabled (shouldn't happen on fresh load, but just in case), start polling
       fetch('/api/mock/state').then(r => r.json()).then(s => { if (s.enabled) startMockPoll(); }).catch(() => {});
     });
+
+    // ── Match Timer ──────────────────────────────────────────────────────────────────
+
+    let timerLocal      = null;
+    let _timerDispInt   = null;
+    let _timerSyncInt   = null;
+
+    function formatTimerMs(ms) {
+      const s = Math.floor(Math.max(0, ms) / 1000);
+      return `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+    }
+
+    function updateTimerSettingsDisplay() {
+      if (!timerLocal) return;
+      const { currentMs, running, direction, receivedAt } = timerLocal;
+      let displayMs = currentMs;
+      if (running) {
+        const elapsed = Date.now() - receivedAt;
+        displayMs = direction === 'down'
+          ? Math.max(0, currentMs - elapsed)
+          : currentMs + elapsed;
+      }
+      document.getElementById('timer-display').textContent = formatTimerMs(displayMs);
+    }
+
+    async function fetchTimerState() {
+      try {
+        const res = await fetch('/api/timer');
+        if (!res.ok) return;
+        const d = await res.json();
+        timerLocal = { ...d, receivedAt: Date.now() };
+        const dir = d.direction === 'down' ? 'down' : 'up';
+        document.querySelector(`input[name="timerDir"][value="${dir}"]`).checked = true;
+        document.getElementById('timerShow').checked = !!d.show;
+        const startBtn = document.getElementById('timerStartBtn');
+        startBtn.textContent = d.running ? '▶ Running…' : '▶ Start';
+        startBtn.disabled    = d.running;
+        updateTimerSettingsDisplay();
+      } catch (_) {}
+    }
+
+    function startTimerLoop() {
+      clearInterval(_timerDispInt);
+      clearInterval(_timerSyncInt);
+      _timerDispInt = setInterval(updateTimerSettingsDisplay, 250);
+      _timerSyncInt = setInterval(fetchTimerState, 5000);
+    }
+
+    async function timerConfigure() {
+      const direction = document.querySelector('input[name="timerDir"]:checked')?.value || 'up';
+      const minutes   = Math.max(0, Number(document.getElementById('timerMinutes').value) || 0);
+      const seconds   = Math.max(0, Math.min(59, Number(document.getElementById('timerSeconds').value) || 0));
+      try {
+        const res = await fetch('/api/timer/configure', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction, minutes, seconds })
+        });
+        const d = await res.json();
+        timerLocal = { direction, running: false, show: timerLocal?.show ?? true,
+                       currentMs: d.currentMs, receivedAt: Date.now() };
+        document.getElementById('timer-display').textContent = formatTimerMs(d.currentMs);
+        document.getElementById('timerStartBtn').textContent = '▶ Start';
+        document.getElementById('timerStartBtn').disabled = false;
+      } catch (_) {}
+    }
+
+    async function timerStart() {
+      try {
+        const res = await fetch('/api/timer/start', { method: 'POST' });
+        const d = await res.json();
+        if (!d.success) return;
+        timerLocal = { ...timerLocal, running: true, currentMs: d.currentMs, receivedAt: Date.now() };
+        document.getElementById('timerStartBtn').textContent = '▶ Running…';
+        document.getElementById('timerStartBtn').disabled = true;
+        document.getElementById('timerShow').checked = true;
+      } catch (_) {}
+    }
+
+    async function timerPause() {
+      try {
+        const res = await fetch('/api/timer/pause', { method: 'POST' });
+        const d = await res.json();
+        timerLocal = { ...timerLocal, running: false, currentMs: d.currentMs, receivedAt: Date.now() };
+        document.getElementById('timer-display').textContent = formatTimerMs(d.currentMs);
+        document.getElementById('timerStartBtn').textContent = '▶ Start';
+        document.getElementById('timerStartBtn').disabled = false;
+      } catch (_) {}
+    }
+
+    async function timerReset() {
+      try {
+        const res = await fetch('/api/timer/reset', { method: 'POST' });
+        const d = await res.json();
+        timerLocal = { ...timerLocal, running: d.running, currentMs: d.currentMs, receivedAt: Date.now() };
+        if (!d.running) {
+          document.getElementById('timer-display').textContent = formatTimerMs(d.currentMs);
+          document.getElementById('timerStartBtn').textContent = '▶ Start';
+          document.getElementById('timerStartBtn').disabled = false;
+        }
+      } catch (_) {}
+    }
+
+    async function timerAdjust(minutes, seconds) {
+      try {
+        const res = await fetch('/api/timer/adjust', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ minutes, seconds })
+        });
+        const d = await res.json();
+        timerLocal = { ...timerLocal, currentMs: d.currentMs, receivedAt: Date.now() };
+        if (!timerLocal.running)
+          document.getElementById('timer-display').textContent = formatTimerMs(d.currentMs);
+      } catch (_) {}
+    }
+
+    async function timerToggleShow() {
+      const show = document.getElementById('timerShow').checked;
+      try {
+        await fetch('/api/timer/show', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ show })
+        });
+        if (timerLocal) timerLocal.show = show;
+      } catch (_) {}
+    }
+
+    document.getElementById('timerApplyBtn').addEventListener('click', timerConfigure);
+    document.getElementById('timerStartBtn').addEventListener('click', timerStart);
+    document.getElementById('timerPauseBtn').addEventListener('click', timerPause);
+    document.getElementById('timerResetBtn').addEventListener('click', timerReset);
+    document.getElementById('timerShow').addEventListener('change', timerToggleShow);
+    document.querySelectorAll('[data-timer-adjust-min]').forEach(btn =>
+      btn.addEventListener('click', () => timerAdjust(Number(btn.dataset.timerAdjustMin), 0)));
+    document.querySelectorAll('[data-timer-adjust-sec]').forEach(btn =>
+      btn.addEventListener('click', () => timerAdjust(0, Number(btn.dataset.timerAdjustSec))));
+
+    fetchTimerState().then(startTimerLoop);
 
     // ── Boot ──────────────────────────────────────────────────────────────────
     setupOverlayUrl();
