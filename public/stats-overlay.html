@@ -238,6 +238,38 @@
     }
 
     /* ── Live dot ──────────────────────────────────────── */
+    /* ── Player photos ───────────────────────────────────── */
+    .player-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .player-photo {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+
+    /* ── Logo background ─────────────────────────────────── */
+    /* Default: white background pill behind team logos */
+    .pg-team-logo,
+    .ts-th-logo {
+      background: #ffffff;
+      padding: 3px;
+      border-radius: 4px;
+    }
+    /* When white bg is OFF in settings */
+    .no-logo-bg .pg-team-logo,
+    .no-logo-bg .ts-th-logo {
+      background: transparent;
+      padding: 0;
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,.55));
+    }
+
+    /* ── Live dot ──────────────────────────────────────── */
     .live-dot {
       position: absolute;
       bottom: 9px; right: 11px;
@@ -350,10 +382,13 @@
     }
 
     function buildPlayerRow(p) {
-      const fmt = (v) => `<td${v > 0 ? ' class="stat-nz"' : ''}>${v}</td>`;
+      const fmt  = (v) => `<td${v > 0 ? ' class="stat-nz"' : ''}>${v}</td>`;
+      const photo = p.photo
+        ? `<img class="player-photo" src="${proxyUrl(p.photo)}" alt="" onerror="this.style.display='none'">`
+        : '';
       return `<tr>
         <td>${p.num}</td>
-        <td>${p.name}</td>
+        <td><div class="player-name-cell">${photo}<span>${p.name}</span></div></td>
         ${fmt(p.goals)}${fmt(p.assists)}${fmt(p.saves)}${fmt(p.yellow)}${fmt(p.red)}
       </tr>`;
     }
@@ -428,6 +463,9 @@
 
     function applyVisibility(data) {
       const wrap = el('stats-wrap');
+
+      // Logo background: applied on every poll so it reacts to settings changes
+      el('stats-panel').classList.toggle('no-logo-bg', data.logoBackground === false);
 
       if (data.visible && !lastVisible) {
         // Re-render on show

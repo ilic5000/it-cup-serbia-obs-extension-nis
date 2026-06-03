@@ -654,6 +654,7 @@ async function scrapeStats(url) {
       players.push({
         num:     $(tds[0]).text().trim(),
         name:    $(tds[1]).find('.notranslate').text().trim(),
+        photo:   abs($(tds[1]).find('img').attr('src') || ''),
         goals:   Number($(tds[2]).text().trim()) || 0,
         assists: Number($(tds[3]).text().trim()) || 0,
         saves:   Number($(tds[4]).text().trim()) || 0,
@@ -727,11 +728,12 @@ app.get('/api/stats-overlay', async (_req, res) => {
   }
 
   res.json({
-    visible:   statsOverlayState.visible,
-    type:      statsOverlayState.type,
-    home:      statsData?.home      || { teamName: '', teamLogo: '', players: [] },
-    away:      statsData?.away      || { teamName: '', teamLogo: '', players: [] },
-    teamStats: statsData?.teamStats || []
+    visible:        statsOverlayState.visible,
+    type:           statsOverlayState.type,
+    logoBackground: settings.logoBackground !== false,
+    home:           statsData?.home      || { teamName: '', teamLogo: '', players: [] },
+    away:           statsData?.away      || { teamName: '', teamLogo: '', players: [] },
+    teamStats:      statsData?.teamStats || []
   });
 });
 
