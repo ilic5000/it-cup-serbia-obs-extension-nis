@@ -626,6 +626,142 @@ app.get('/api/game-data', async (req, res) => {
   }
 });
 
+// ── Stats scraper + state ─────────────────────────────────────────────────────
+
+async function scrapeStats(url) {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OBS-IT-Cup/1.0)' },
+    timeout: 12000
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const html = await res.text();
+  const $    = cheerio.load(html);
+  const base = new URL(url).origin;
+  const abs  = (src) => (!src ? '' : src.startsWith('http') ? src : base + src);
+
+  // Player stats (Statistika igrača)
+  const statsBoxes = $('[data-page="players"] .game-stats-box').toArray();
+
+  const parsePlayerBox = (boxEl) => {
+    const $box    = $(boxEl);
+    const teamName = $box.find('.game-stats-box-team span').text().trim();
+    const teamLogo = abs($box.find('.game-stats-box-team img').attr('src') || '');
+    const players  = [];
+
+    $box.find('tbody tr').each((_i, trEl) => {
+      const tds = $(trEl).find('td');
+      players.push({
+        num:     $(tds[0]).text().trim(),
+        name:    $(tds[1]).find('.notranslate').text().trim(),
+        goals:   Number($(tds[2]).text().trim()) || 0,
+        assists: Number($(tds[3]).text().trim()) || 0,
+        saves:   Number($(tds[4]).text().trim()) || 0,
+        yellow:  Number($(tds[5]).text().trim()) || 0,
+        red:     Number($(tds[6]).text().trim()) || 0
+      });
+    });
+    return { teamName, teamLogo, players };
+  };
+
+  const homeStats = statsBoxes[0] ? parsePlayerBox(statsBoxes[0]) : { teamName: '', teamLogo: '', players: [] };
+  const awayStats = statsBoxes[1] ? parsePlayerBox(statsBoxes[1]) : { teamName: '', teamLogo: '', players: [] };
+
+  // Team stats (Timska statistika)
+  const teamStats = [];
+  $('[data-page="teams"] .team-stats-field-name').each((_i, el) => {
+    const $el   = $(el);
+    const field = $el.attr('data-field') || '';
+    const label = $el.find('p').text().trim();
+    const spans = $el.find('span');
+    const homeVal = Number($(spans[0]).text().trim()) || 0;
+    const awayVal = Number($(spans[1]).text().trim()) || 0;
+    if (field) teamStats.push({ field, label, home: homeVal, away: awayVal });
+  });
+
+  return { home: homeStats, away: awayStats, teamStats };
+}
+
+let statsOverlayState = {
+  visible:   false,
+  type:      'players', // 'players' | 'teams'
+  hideTimer: null
+};
+
+let _statsCache = { data: null, cachedAt: 0 };
+const STATS_CACHE_TTL = 30000;
+
+// GET /api/stats-overlay
+app.get('/api/stats-overlay', async (_req, res) => {
+  let statsData = null;
+
+  const settings = loadSettings();
+
+  if (mockState.enabled) {
+    const emptyRow = (p) => ({ num: p.num || '', name: p.name || '', goals: 0, assists: 0, saves: 0, yellow: 0, red: 0 });
+    statsData = {
+      home:      { teamName: mockState.homeTeam.name, teamLogo: mockState.homeTeam.logo, players: MOCK_HOME_PLAYERS.map(emptyRow) },
+      away:      { teamName: mockState.awayTeam.name, teamLogo: mockState.awayTeam.logo, players: MOCK_AWAY_PLAYERS.map(emptyRow) },
+      teamStats: []
+    };
+  } else if (settings.gameUrl) {
+    const now = Date.now();
+    if (_statsCache.data && (now - _statsCache.cachedAt) < STATS_CACHE_TTL) {
+      statsData = _statsCache.data;
+    } else {
+      try {
+        statsData = await scrapeStats(settings.gameUrl);
+        _statsCache = { data: statsData, cachedAt: now };
+      } catch (_err) {
+        statsData = _statsCache.data || null;
+      }
+    }
+
+    if (statsData) {
+      const ov = settings.overrides || {};
+      if (ov.homeTeamName) statsData.home.teamName = ov.homeTeamName;
+      if (ov.awayTeamName) statsData.away.teamName = ov.awayTeamName;
+      if (ov.homeTeamLogo) statsData.home.teamLogo = ov.homeTeamLogo;
+      if (ov.awayTeamLogo) statsData.away.teamLogo = ov.awayTeamLogo;
+    }
+  }
+
+  res.json({
+    visible:   statsOverlayState.visible,
+    type:      statsOverlayState.type,
+    home:      statsData?.home      || { teamName: '', teamLogo: '', players: [] },
+    away:      statsData?.away      || { teamName: '', teamLogo: '', players: [] },
+    teamStats: statsData?.teamStats || []
+  });
+});
+
+// POST /api/stats-overlay/show  — body: { type?, duration? }
+app.post('/api/stats-overlay/show', (req, res) => {
+  const { type = 'players', duration = 15 } = req.body || {};
+  statsOverlayState.visible = true;
+  statsOverlayState.type    = type === 'teams' ? 'teams' : 'players';
+
+  if (statsOverlayState.hideTimer) { clearTimeout(statsOverlayState.hideTimer); statsOverlayState.hideTimer = null; }
+
+  const dur = Number(duration) || 0;
+  if (dur > 0) {
+    statsOverlayState.hideTimer = setTimeout(() => {
+      statsOverlayState.visible   = false;
+      statsOverlayState.hideTimer = null;
+    }, dur * 1000);
+  }
+
+  _statsCache.cachedAt = 0; // force fresh scrape on next poll
+  res.json({ success: true, visible: true, type: statsOverlayState.type });
+});
+
+// POST /api/stats-overlay/hide
+app.post('/api/stats-overlay/hide', (_req, res) => {
+  if (statsOverlayState.hideTimer) { clearTimeout(statsOverlayState.hideTimer); statsOverlayState.hideTimer = null; }
+  statsOverlayState.visible = false;
+  res.json({ success: true, visible: false });
+});
+
 // GET /api/proxy-image?url=... — proxy team logos to avoid CORS in OBS browser
 app.get('/api/proxy-image', async (req, res) => {
   const { url } = req.query;
@@ -657,8 +793,10 @@ app.listen(PORT, () => {
   console.log('');
   console.log('  ⚽  IT Cup OBS Extension');
   console.log('  ──────────────────────────────────────');
-  console.log(`  Overlay  ->  http://localhost:${PORT}/overlay.html`);
-  console.log(`  Settings ->  http://localhost:${PORT}/settings.html`);
+  console.log(`  Overlay       ->  http://localhost:${PORT}/overlay.html`);
+  console.log(`  Goal Overlay  ->  http://localhost:${PORT}/goal-overlay.html`);
+  console.log(`  Stats Overlay ->  http://localhost:${PORT}/stats-overlay.html`);
+  console.log(`  Settings      ->  http://localhost:${PORT}/settings.html`);
   console.log('');
   console.log('  Press Ctrl+C to stop.');
   console.log('');

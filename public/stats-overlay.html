@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <title>IT Cup – Statistics Overlay</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: transparent;
+      width: 1920px; height: 1080px;
+      overflow: hidden;
+      font-family: 'Segoe UI', 'Arial Narrow', Arial, sans-serif;
+    }
+
+    /* ── Full-canvas wrapper ─────────────────────────────── */
+    #stats-wrap {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.96) translateY(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+    #stats-wrap.visible {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    /* Semi-transparent backdrop */
+    .stats-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.68);
+    }
+
+    /* ── Main panel ──────────────────────────────────────── */
+    .stats-panel {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(155deg, #0d1117 0%, #161b27 100%);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      box-shadow: 0 32px 96px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.04) inset;
+      overflow: hidden;
+      max-width: 1560px;
+      min-width: 640px;
+    }
+
+    /* Panel header */
+    .sp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px 12px;
+      background: rgba(255,255,255,.03);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      gap: 16px;
+    }
+    .sp-type-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.4);
+      flex-shrink: 0;
+    }
+    .sp-countdown {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,.28);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Player stats ───────────────────────────────────── */
+    .player-grid {
+      display: flex;
+    }
+    .pg-team {
+      flex: 1;
+      min-width: 0;
+    }
+    .pg-team:first-child {
+      border-right: 1px solid rgba(255,255,255,.07);
+    }
+    .pg-team-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px 10px;
+      background: rgba(255,255,255,.025);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .pg-team-logo {
+      width: 38px; height: 30px;
+      object-fit: contain;
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,.5));
+    }
+    .pg-team-name {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #f1f5f9;
+    }
+
+    .pg-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .pg-table thead tr {
+      background: rgba(255,255,255,.035);
+    }
+    .pg-table th {
+      padding: 7px 12px;
+      text-align: center;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,.32);
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .pg-table th:nth-child(2) { text-align: left; min-width: 150px; }
+
+    .pg-table td {
+      padding: 8px 12px;
+      text-align: center;
+      color: rgba(255,255,255,.38);
+      border-bottom: 1px solid rgba(255,255,255,.035);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .pg-table td:first-child {
+      color: rgba(255,255,255,.25);
+      font-size: 11px;
+      font-weight: 700;
+      width: 38px;
+    }
+    .pg-table td:nth-child(2) {
+      text-align: left;
+      color: rgba(255,255,255,.82);
+      font-weight: 600;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pg-table td.stat-nz {
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .pg-table tbody tr:nth-child(even) {
+      background: rgba(255,255,255,.012);
+    }
+
+    /* ── Team stats ─────────────────────────────────────── */
+    .team-stats-wrap {
+      padding: 10px 0 14px;
+    }
+    .ts-team-headers {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 32px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      margin-bottom: 6px;
+    }
+    .ts-th {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ts-th.away { flex-direction: row-reverse; }
+    .ts-th-logo {
+      width: 34px; height: 28px;
+      object-fit: contain;
+    }
+    .ts-th-name {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #f1f5f9;
+    }
+
+    .ts-stat-row {
+      display: grid;
+      grid-template-columns: 68px 1fr 68px;
+      align-items: center;
+      padding: 4px 32px;
+      gap: 0;
+    }
+    .ts-label-row {
+      text-align: center;
+      padding: 0 32px 2px;
+    }
+    .ts-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.28);
+    }
+    .ts-val {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+    .ts-val.home { text-align: right; padding-right: 16px; }
+    .ts-val.away { text-align: left;  padding-left: 16px; }
+
+    .ts-bar-track {
+      height: 18px;
+      background: rgba(255,255,255,.07);
+      border-radius: 3px;
+      overflow: hidden;
+      display: flex;
+    }
+    .ts-bar-home {
+      height: 100%;
+      background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+      border-radius: 3px 0 0 3px;
+      transition: width .7s cubic-bezier(.4,0,.2,1);
+    }
+    .ts-bar-away {
+      height: 100%;
+      background: linear-gradient(90deg, #b91c1c, #ef4444);
+      border-radius: 0 3px 3px 0;
+      margin-left: auto;
+      transition: width .7s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Live dot ──────────────────────────────────────── */
+    .live-dot {
+      position: absolute;
+      bottom: 9px; right: 11px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: livePulse 2.4s ease infinite;
+    }
+    .live-dot.err { background: #ef4444; animation: none; }
+
+    @keyframes livePulse {
+      0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(34,197,94,.5); }
+      50%      { opacity:.7; box-shadow:0 0 0 4px rgba(34,197,94,0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="stats-wrap">
+    <div class="stats-backdrop"></div>
+
+    <div class="stats-panel" id="stats-panel">
+      <!-- Header -->
+      <div class="sp-header">
+        <span class="sp-type-label" id="sp-type-label">Statistika igrača</span>
+        <span class="sp-countdown" id="sp-countdown"></span>
+      </div>
+
+      <!-- Player stats view -->
+      <div id="view-players" style="display:none;">
+        <div class="player-grid">
+          <div class="pg-team" id="pg-home">
+            <div class="pg-team-header">
+              <img class="pg-team-logo" id="pg-home-logo" src="" alt="">
+              <span class="pg-team-name" id="pg-home-name">–</span>
+            </div>
+            <table class="pg-table">
+              <thead><tr>
+                <th title="Broj na dresu">#</th>
+                <th title="Ime i prezime">Ime</th>
+                <th title="Golovi">GOL</th>
+                <th title="Asistencije">AST</th>
+                <th title="Odbrane">ODB</th>
+                <th title="Žuti kartoni">🟨</th>
+                <th title="Crveni kartoni">🟥</th>
+              </tr></thead>
+              <tbody id="pg-home-body"></tbody>
+            </table>
+          </div>
+          <div class="pg-team" id="pg-away">
+            <div class="pg-team-header">
+              <img class="pg-team-logo" id="pg-away-logo" src="" alt="">
+              <span class="pg-team-name" id="pg-away-name">–</span>
+            </div>
+            <table class="pg-table">
+              <thead><tr>
+                <th title="Broj na dresu">#</th>
+                <th title="Ime i prezime">Ime</th>
+                <th title="Golovi">GOL</th>
+                <th title="Asistencije">AST</th>
+                <th title="Odbrane">ODB</th>
+                <th title="Žuti kartoni">🟨</th>
+                <th title="Crveni kartoni">🟥</th>
+              </tr></thead>
+              <tbody id="pg-away-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team stats view -->
+      <div id="view-teams" style="display:none;">
+        <div class="team-stats-wrap">
+          <div class="ts-team-headers">
+            <div class="ts-th home">
+              <img class="ts-th-logo" id="ts-home-logo" src="" alt="">
+              <span class="ts-th-name" id="ts-home-name">–</span>
+            </div>
+            <div class="ts-th away">
+              <img class="ts-th-logo" id="ts-away-logo" src="" alt="">
+              <span class="ts-th-name" id="ts-away-name">–</span>
+            </div>
+          </div>
+          <div id="ts-rows"></div>
+        </div>
+      </div>
+
+      <div class="live-dot" id="live-dot"></div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    const el = (id) => document.getElementById(id);
+
+    let lastVisible  = false;
+    let hideAtMs     = null;  // epoch ms when auto-hide fires
+    let countdownInt = null;
+
+    function proxyUrl(url) {
+      return (url && url.startsWith('http'))
+        ? `/api/proxy-image?url=${encodeURIComponent(url)}`
+        : url || '';
+    }
+
+    function setLiveDot(ok) {
+      const dot = el('live-dot');
+      if (ok) dot.classList.remove('err');
+      else     dot.classList.add('err');
+    }
+
+    function buildPlayerRow(p) {
+      const fmt = (v) => `<td${v > 0 ? ' class="stat-nz"' : ''}>${v}</td>`;
+      return `<tr>
+        <td>${p.num}</td>
+        <td>${p.name}</td>
+        ${fmt(p.goals)}${fmt(p.assists)}${fmt(p.saves)}${fmt(p.yellow)}${fmt(p.red)}
+      </tr>`;
+    }
+
+    function renderPlayers(data) {
+      const homeLogo = el('pg-home-logo');
+      const awayLogo = el('pg-away-logo');
+      homeLogo.src = proxyUrl(data.home.teamLogo);
+      awayLogo.src = proxyUrl(data.away.teamLogo);
+      el('pg-home-name').textContent = data.home.teamName || '–';
+      el('pg-away-name').textContent = data.away.teamName || '–';
+
+      el('pg-home-body').innerHTML = (data.home.players || []).map(buildPlayerRow).join('');
+      el('pg-away-body').innerHTML = (data.away.players || []).map(buildPlayerRow).join('');
+    }
+
+    function renderTeamStats(data) {
+      el('ts-home-logo').src = proxyUrl(data.home.teamLogo);
+      el('ts-away-logo').src = proxyUrl(data.away.teamLogo);
+      el('ts-home-name').textContent = data.home.teamName || '–';
+      el('ts-away-name').textContent = data.away.teamName || '–';
+
+      const container = el('ts-rows');
+      container.innerHTML = '';
+
+      (data.teamStats || []).forEach(stat => {
+        const total   = stat.home + stat.away;
+        const homePct = total > 0 ? Math.round((stat.home / total) * 100) : 50;
+        const awayPct = 100 - homePct;
+
+        const labelRow = document.createElement('div');
+        labelRow.className = 'ts-label-row';
+        labelRow.innerHTML = `<span class="ts-label">${stat.label}</span>`;
+
+        const statRow = document.createElement('div');
+        statRow.className = 'ts-stat-row';
+        statRow.innerHTML = `
+          <span class="ts-val home">${stat.home}</span>
+          <div class="ts-bar-track">
+            <div class="ts-bar-home" style="width:${homePct}%"></div>
+            <div class="ts-bar-away" style="width:${awayPct}%"></div>
+          </div>
+          <span class="ts-val away">${stat.away}</span>
+        `;
+
+        container.appendChild(labelRow);
+        container.appendChild(statRow);
+      });
+    }
+
+    function startCountdown(durationMs) {
+      if (countdownInt) clearInterval(countdownInt);
+      hideAtMs = Date.now() + durationMs;
+
+      countdownInt = setInterval(() => {
+        const remaining = Math.max(0, hideAtMs - Date.now());
+        const secs = Math.ceil(remaining / 1000);
+        el('sp-countdown').textContent = secs > 0 ? `${secs}s` : '';
+        if (remaining === 0) {
+          clearInterval(countdownInt);
+          countdownInt = null;
+          hideAtMs = null;
+        }
+      }, 250);
+    }
+
+    function stopCountdown() {
+      if (countdownInt) { clearInterval(countdownInt); countdownInt = null; }
+      hideAtMs = null;
+      el('sp-countdown').textContent = '';
+    }
+
+    function applyVisibility(data) {
+      const wrap = el('stats-wrap');
+
+      if (data.visible && !lastVisible) {
+        // Re-render on show
+        el('sp-type-label').textContent = data.type === 'teams' ? 'Timska statistika' : 'Statistika igrača';
+
+        if (data.type === 'teams') {
+          el('view-players').style.display = 'none';
+          el('view-teams').style.display   = '';
+          renderTeamStats(data);
+        } else {
+          el('view-teams').style.display   = 'none';
+          el('view-players').style.display = '';
+          renderPlayers(data);
+        }
+
+        wrap.classList.add('visible');
+        // Start client-side countdown indicator; server handles actual hide
+        stopCountdown();
+      } else if (!data.visible && lastVisible) {
+        wrap.classList.remove('visible');
+        stopCountdown();
+      }
+
+      lastVisible = data.visible;
+    }
+
+    let pollTimer = null;
+
+    async function poll() {
+      try {
+        const res = await fetch('/api/stats-overlay');
+        if (!res.ok) { setLiveDot(false); return; }
+        const data = await res.json();
+        setLiveDot(true);
+        applyVisibility(data);
+      } catch (_) {
+        setLiveDot(false);
+      } finally {
+        pollTimer = setTimeout(poll, 2000);
+      }
+    }
+
+    poll();
+  </script>
+</body>
+</html>
