@@ -30,6 +30,22 @@
     .logo-wrap       { background: #ffffff; transition: background .3s, padding .3s; }
     .logo-wrap.no-bg { background: transparent !important; }
 
+    /* ── Shared: scoreboard shadow/stroke (on by default) ───────────────── */
+    .bar.has-shadow {
+      box-shadow:
+        0 -6px 40px rgba(230,57,70,.22),
+        0 -2px 0 rgba(255,255,255,.04) inset,
+        0 -20px 40px rgba(0,0,0,.9),
+        0 8px 22px rgba(0,0,0,.7);
+    }
+    .corner.has-shadow {
+      box-shadow:
+        0 8px 40px rgba(0,0,0,.75),
+        0 0 0 1px rgba(255,255,255,.07),
+        0 0 0 3px rgba(0,0,0,.72),
+        0 0 36px 10px rgba(0,0,0,.8);
+    }
+
     /* ── Shared: live dot ────────────────────────────────────────────────── */
     .live-dot {
       border-radius: 50%;
@@ -457,9 +473,10 @@
     // ── Settings ────────────────────────────────────────────────────────────
 
     function applySettings(s) {
-      const tpl = s.template       || 'bar';
-      const lbg = s.logoBackground !== false;
-      const ri  = Math.max(1, Number(s.refreshInterval) || 10) * 1000;
+      const tpl    = s.template          || 'bar';
+      const lbg    = s.logoBackground    !== false;
+      const shadow = s.scoreboardShadow  !== false;
+      const ri     = Math.max(1, Number(s.refreshInterval) || 10) * 1000;
 
       refreshInterval = ri;
 
@@ -472,6 +489,11 @@
       document.querySelectorAll('.logo-wrap').forEach(el => {
         el.classList.toggle('no-bg', !lbg);
       });
+
+      const bar    = document.querySelector('.bar');
+      const corner = document.querySelector('.corner');
+      if (bar)    bar.classList.toggle('has-shadow', shadow);
+      if (corner) corner.classList.toggle('has-shadow', shadow);
     }
 
     // ── Render ──────────────────────────────────────────────────────────────

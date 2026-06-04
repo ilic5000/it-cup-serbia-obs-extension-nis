@@ -336,11 +336,28 @@
       margin-bottom: 10px;
     }
 
+    .url-display a {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .url-display a:hover code { color: var(--text); text-decoration: underline; }
+    .url-display a svg { flex-shrink: 0; opacity: .45; }
+    .url-display a:hover svg { opacity: .8; }
+
     .url-display code {
       flex: 1;
+      min-width: 0;
       font-size: 13px;
       color: var(--text2);
       font-family: 'Cascadia Code', 'Consolas', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .obs-hint {
@@ -785,7 +802,7 @@
       <div class="tpl-grid">
         <!-- Template 1: Bar -->
         <label class="tpl-card">
-          <input type="radio" name="template" value="bar" checked>
+          <input type="radio" name="template" value="bar">
           <div class="tpl-preview tpl-preview-bar">
             <div class="mini-bar">
               <div class="mini-bar-dot"></div>
@@ -801,7 +818,7 @@
 
         <!-- Template 2: Corner -->
         <label class="tpl-card">
-          <input type="radio" name="template" value="corner">
+          <input type="radio" name="template" value="corner" checked>
           <div class="tpl-preview tpl-preview-corner">
             <div class="mini-corner">
               <div class="mini-corner-team">
@@ -826,6 +843,11 @@
         <input type="checkbox" id="logoBackground" checked>
         <div class="toggle"></div>
         <span class="toggle-label-text">White background behind team logos</span>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="scoreboardShadow">
+        <div class="toggle"></div>
+        <span class="toggle-label-text">Shadow / stroke around scoreboard <span style="font-size:11px;color:var(--text3);font-weight:400">(helps when edges blend into background)</span></span>
       </label>
     </div>
 
@@ -983,7 +1005,10 @@
 
       <p style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Scoreboard Overlay</p>
       <div class="url-display">
-        <code id="overlayUrl">http://localhost:3000/overlay.html</code>
+        <a id="overlayLink" href="http://localhost:3000/overlay.html" target="_blank" rel="noopener" title="Open in new tab">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <code id="overlayUrl">http://localhost:3000/overlay.html</code>
+        </a>
         <button class="btn btn-ghost" id="copyBtn">Copy URL</button>
       </div>
       <p class="obs-hint" style="margin-bottom:16px;">
@@ -995,7 +1020,10 @@
 
       <p style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Goal Scorer Overlay</p>
       <div class="url-display">
-        <code id="goalOverlayUrl">http://localhost:3000/goal-overlay.html</code>
+        <a id="goalOverlayLink" href="http://localhost:3000/goal-overlay.html" target="_blank" rel="noopener" title="Open in new tab">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <code id="goalOverlayUrl">http://localhost:3000/goal-overlay.html</code>
+        </a>
         <button class="btn btn-ghost" id="copyGoalBtn">Copy URL</button>
       </div>
       <p class="obs-hint" style="margin-bottom:16px;">
@@ -1007,7 +1035,10 @@
 
       <p style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Statistics Overlay</p>
       <div class="url-display">
-        <code id="statsOverlayUrl">http://localhost:3000/stats-overlay.html</code>
+        <a id="statsOverlayLink" href="http://localhost:3000/stats-overlay.html" target="_blank" rel="noopener" title="Open in new tab">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <code id="statsOverlayUrl">http://localhost:3000/stats-overlay.html</code>
+        </a>
         <button class="btn btn-ghost" id="copyStatsBtn">Copy URL</button>
       </div>
       <p class="obs-hint">
@@ -1240,7 +1271,8 @@
         if (tplInput) tplInput.checked = true;
 
         // Logo background
-        document.getElementById('logoBackground').checked = data.logoBackground !== false;
+        document.getElementById('logoBackground').checked    = data.logoBackground   !== false;
+        document.getElementById('scoreboardShadow').checked  = data.scoreboardShadow !== false;
         updatePreviewLogoBg();
         updatePreviewLayout();
         updateGopPreview();
@@ -1386,7 +1418,8 @@
         gameUrl,
         refreshInterval: Number(val('refreshInterval')) || 10,
         template:        document.querySelector('input[name="template"]:checked')?.value || 'bar',
-        logoBackground:  document.getElementById('logoBackground').checked,
+        logoBackground:   document.getElementById('logoBackground').checked,
+        scoreboardShadow: document.getElementById('scoreboardShadow').checked,
         overrides: {
           homeTeamName: val('homeTeamName'),
           awayTeamName: val('awayTeamName'),
@@ -1445,6 +1478,10 @@
       document.getElementById('overlayUrl').textContent      = overlayUrl;
       document.getElementById('goalOverlayUrl').textContent  = goalUrl;
       document.getElementById('statsOverlayUrl').textContent = statsUrl;
+
+      document.getElementById('overlayLink').href      = overlayUrl;
+      document.getElementById('goalOverlayLink').href  = goalUrl;
+      document.getElementById('statsOverlayLink').href = statsUrl;
 
       makecopier('copyBtn',      overlayUrl);
       makecopier('copyGoalBtn',  goalUrl);

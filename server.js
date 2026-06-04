@@ -18,8 +18,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const DEFAULT_SETTINGS = {
   gameUrl: '',
   refreshInterval: 10,
-  template: 'bar',
-  logoBackground: true,
+  template: 'corner',
+  logoBackground:    true,
+  scoreboardShadow:  false,
   overrides: {
     homeTeamName: '',
     awayTeamName: '',
@@ -493,7 +494,7 @@ async function scrapeGoalEvents(url) {
 
     const playerName = inner.find('span:not(.play-by-play-teamname)').first().text().trim();
     const playerNum  = inner.find('b.play-by-play-player-num').first().text().trim();
-    const playerImg  = abs(inner.find('.table-player-img img').attr('src') || '');
+    const playerImg  = abs(inner.find('.player-img img').attr('src') || '');
 
     // Extract minute from action name text (strip SVG, then match digit)
     const actionClone = inner.find('.play-by-play-action-name').first().clone();
@@ -520,7 +521,7 @@ async function scrapeGoalEvents(url) {
 
     const playerName = inner.find('span:not(.play-by-play-teamname)').first().text().trim();
     const playerNum  = inner.find('b.play-by-play-player-num').first().text().trim();
-    const playerImg  = abs(inner.find('.table-player-img img').attr('src') || '');
+    const playerImg  = abs(inner.find('.player-img img').attr('src') || '');
 
     const actionClone = inner.find('.play-by-play-action-name').first().clone();
     actionClone.find('svg, .small-yellow-card-box').remove();
@@ -542,7 +543,7 @@ async function scrapeGoalEvents(url) {
 
     const playerName = inner.find('span:not(.play-by-play-teamname)').first().text().trim();
     const playerNum  = inner.find('b.play-by-play-player-num').first().text().trim();
-    const playerImg  = abs(inner.find('.table-player-img img').attr('src') || '');
+    const playerImg  = abs(inner.find('.player-img img').attr('src') || '');
 
     const actionClone = inner.find('.play-by-play-action-name').first().clone();
     actionClone.find('svg, .small-red-card-box').remove();
