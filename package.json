@@ -1,6 +1,6 @@
 {
   "name": "obs-it-cup-extension",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "OBS Scoreboard Overlay for IT Cup Serbia — auto-fetches live match data from itkupsrbije.com",
   "main": "server.js",
   "scripts": {

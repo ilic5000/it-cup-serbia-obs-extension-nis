@@ -11,9 +11,9 @@
 #       That's it — Docker stores the credentials; you never need to log in again.
 #
 #  USAGE:
-#    .\docker-push.ps1                          # patch bump:  1.0.0 → 1.0.1
-#    .\docker-push.ps1 -Bump minor             # minor bump:  1.0.0 → 1.1.0
-#    .\docker-push.ps1 -Bump major             # major bump:  1.0.0 → 2.0.0
+#    .\docker-push.ps1                          # patch bump:  1.0.0 -> 1.0.1
+#    .\docker-push.ps1 -Bump minor             # minor bump:  1.0.0 -> 1.1.0
+#    .\docker-push.ps1 -Bump major             # major bump:  1.0.0 -> 2.0.0
 #    .\docker-push.ps1 -Version 2.3.0          # exact version
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # ── Config — edit these two lines ────────────────────────────────────────────
-$GITHUB_USER  = 'YOUR_GITHUB_USERNAME'   # <── replace with your GitHub username
+$GITHUB_USER  = 'ilic5000'   # <── replace with your GitHub username
 $IMAGE_NAME   = 'it-cup-obs-extension'   # image name (all lowercase)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ if ($confirm -match '^[nN]') {
 $raw = Get-Content $PKG_JSON -Raw
 $raw = $raw -replace '"version"\s*:\s*"[^"]+"', """version"": ""$newVersion"""
 Set-Content $PKG_JSON $raw -NoNewline
-Write-Host "  ✓ package.json updated → $newVersion" -ForegroundColor Green
+Write-Host "  [OK] package.json updated -> $newVersion" -ForegroundColor Green
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 Write-Host ""
@@ -84,21 +84,21 @@ docker build `
     -t "${FULL_IMAGE}:latest" `
     $PSScriptRoot
 
-if ($LASTEXITCODE -ne 0) { Write-Host "  ✗ Build failed." -ForegroundColor Red; exit 1 }
-Write-Host "  ✓ Build done." -ForegroundColor Green
+if ($LASTEXITCODE -ne 0) { Write-Host "  [FAIL] Build failed." -ForegroundColor Red; exit 1 }
+Write-Host "  [OK] Build done." -ForegroundColor Green
 
 # ── Push ─────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "  Pushing ${FULL_IMAGE}:${newVersion} ..." -ForegroundColor Cyan
 docker push "${FULL_IMAGE}:${newVersion}"
-if ($LASTEXITCODE -ne 0) { Write-Host "  ✗ Push failed." -ForegroundColor Red; exit 1 }
+if ($LASTEXITCODE -ne 0) { Write-Host "  [FAIL] Push failed." -ForegroundColor Red; exit 1 }
 
 Write-Host "  Pushing ${FULL_IMAGE}:latest ..." -ForegroundColor Cyan
 docker push "${FULL_IMAGE}:latest"
-if ($LASTEXITCODE -ne 0) { Write-Host "  ✗ Push failed." -ForegroundColor Red; exit 1 }
+if ($LASTEXITCODE -ne 0) { Write-Host "  [FAIL] Push failed." -ForegroundColor Red; exit 1 }
 
 Write-Host ""
-Write-Host "  ✓ Published successfully!" -ForegroundColor Green
+Write-Host "  [OK] Published successfully!" -ForegroundColor Green
 Write-Host ""
 Write-Host "  ghcr.io image  : ${FULL_IMAGE}:${newVersion}" -ForegroundColor White
 Write-Host "  Pull command   : docker pull ${FULL_IMAGE}:${newVersion}" -ForegroundColor White
