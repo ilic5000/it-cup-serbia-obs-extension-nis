@@ -46,8 +46,9 @@
       border-radius: 10px;
       box-shadow: 0 32px 96px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.04) inset;
       overflow: hidden;
-      max-width: 1280px;
-      min-width: 640px;
+      /* Fixed width so long names can never push the panel wider;
+         1280 * 1.2 (scale) = 1536px — comfortably fits 1920px canvas */
+      width: 1280px;
       /* Scale up 20% — keeps all internal px values unchanged */
       transform: scale(1.2);
       transform-origin: center center;
@@ -115,6 +116,8 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
+      /* Respect column widths; prevents content from blowing out the table */
+      table-layout: fixed;
     }
     .pg-table thead tr {
       background: rgba(255,255,255,.035);
@@ -129,7 +132,7 @@
       text-transform: uppercase;
       border-bottom: 1px solid rgba(255,255,255,.06);
     }
-    .pg-table th:nth-child(2) { text-align: left; min-width: 150px; }
+    .pg-table th:nth-child(2) { text-align: left; width: 38%; }
 
     .pg-table td {
       padding: 8px 12px;
@@ -149,9 +152,9 @@
       text-align: left;
       color: rgba(255,255,255,.82);
       font-weight: 600;
-      max-width: 200px;
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .pg-table td.stat-nz {
       color: #fff;
@@ -246,6 +249,13 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      overflow: hidden;
+    }
+    .player-name-cell span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
     }
     .player-photo {
       width: 28px; height: 28px;
