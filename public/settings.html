@@ -707,7 +707,7 @@
         <input type="url" id="gameUrl"
                placeholder="https://itkupsrbije.com/game.php?id=31">
         <button class="btn btn-secondary" id="previewBtn">
-          <span id="previewBtnLabel">Preview</span>
+          <span id="previewBtnLabel">Fetch</span>
         </button>
       </div>
       <div class="status-bar" id="previewStatus"></div>
@@ -765,6 +765,12 @@
       </div>
 
       <div class="preview-meta" id="pvMeta"></div>
+
+      <!-- Save -->
+      <button class="btn btn-primary btn-save" id="saveBtn" data-live-hide style="margin-top:20px">
+        Save &amp; Activate
+      </button>
+      <div class="status-bar" id="saveStatus" data-live-hide></div>
 
       <!-- Overrides -->
       <div class="card" style="margin-top:20px">
@@ -991,12 +997,6 @@
       </div>
     </div>
 
-    <!-- ── Save ── -->
-    <button class="btn btn-primary btn-save" id="saveBtn" data-live-hide>
-      Save &amp; Activate
-    </button>
-    <div class="status-bar" id="saveStatus" data-live-hide></div>
-
     <hr class="divider" style="margin-top:28px" data-live-hide>
 
     <!-- ── Overlay link ── -->
@@ -1118,24 +1118,11 @@
     <div class="card" id="stats-card">
       <div class="card__title">📊 Statistics Overlay</div>
       <p style="font-size:12px;color:var(--text3);margin-bottom:18px;line-height:1.6;">
-        Show a full-screen statistics panel in OBS. Choose between player stats and team stats,
-        set how long it stays visible (0&nbsp;=&nbsp;manual hide only), then press <strong>Show</strong>.
+        Show a full-screen statistics panel in OBS.
+        Set how long it stays visible (0&nbsp;=&nbsp;manual hide only), then press the type you want to show.
       </p>
 
       <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;">
-        <div class="field">
-          <label>Statistics type</label>
-          <div style="display:flex;gap:18px;margin-top:8px;">
-            <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;">
-              <input type="radio" name="statsType" id="statsTypePlayers" value="players" checked>
-              👤 Statistika igrača
-            </label>
-            <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;">
-              <input type="radio" name="statsType" id="statsTypeTeams" value="teams">
-              📊 Timska statistika
-            </label>
-          </div>
-        </div>
         <div class="field">
           <label for="statsDuration">Trajanje prikaza (sec)</label>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
@@ -1147,7 +1134,8 @@
       </div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <button class="btn btn-primary" id="statsShowBtn">📊 Show</button>
+        <button class="btn btn-primary" id="statsShowPlayersBtn">👤 Player Stats</button>
+        <button class="btn btn-primary" id="statsShowTeamsBtn">📊 Team Stats</button>
         <button class="btn btn-ghost"   id="statsHideBtn">✕ Hide</button>
         <span id="stats-overlay-status" style="font-size:12px;color:var(--text3);margin-left:8px;"></span>
       </div>
@@ -1303,7 +1291,7 @@
 
     // ── Preview ──────────────────────────────────────────────────────────────
 
-    async function runPreview(url) {
+    async function runPreview(url, populateOverrides = false) {
       const btn   = document.getElementById('previewBtn');
       const label = document.getElementById('previewBtnLabel');
 
@@ -1321,6 +1309,24 @@
         }
 
         renderPreview(data);
+
+        // On manual Fetch: always fill override fields with scraped values
+        // so the user can immediately see and correct any bad names/logos.
+        // On auto-load: only fill fields that are currently empty.
+        const shouldFill = (id) => populateOverrides || !val(id);
+        if (shouldFill('homeTeamName')) document.getElementById('homeTeamName').value = data.homeTeam.name || '';
+        if (shouldFill('awayTeamName')) document.getElementById('awayTeamName').value = data.awayTeam.name || '';
+        if (shouldFill('homeTeamLogo')) document.getElementById('homeTeamLogo').value = data.homeTeam.logo || '';
+        if (shouldFill('awayTeamLogo')) document.getElementById('awayTeamLogo').value = data.awayTeam.logo || '';
+
+        // Apply override field values to the visible preview
+        const hn = val('homeTeamName'), an = val('awayTeamName');
+        const hl = val('homeTeamLogo'), al = val('awayTeamLogo');
+        if (hn) document.getElementById('pvHomeName').textContent  = hn;
+        if (an) document.getElementById('pvAwayName').textContent  = an;
+        if (hl) { document.getElementById('pvHomeLogo').src = proxyUrl(hl); const w = document.getElementById('pvHomeLogoWrap'); if (w) w.style.display = ''; }
+        if (al) { document.getElementById('pvAwayLogo').src = proxyUrl(al); const w = document.getElementById('pvAwayLogoWrap'); if (w) w.style.display = ''; }
+
         document.getElementById('previewSection').classList.remove('hidden');
         showStatus('previewStatus', '✓ Game data loaded successfully.', 'success');
         updateGopPreview();
@@ -1329,7 +1335,7 @@
         showStatus('previewStatus', `Connection error: ${err.message}`, 'error');
       } finally {
         btn.disabled  = false;
-        label.textContent = 'Preview';
+        label.textContent = 'Fetch';
       }
     }
 
@@ -1609,7 +1615,7 @@
         showStatus('previewStatus', 'Enter a game URL first.', 'error');
         return;
       }
-      runPreview(url);
+      runPreview(url, true);
     });
 
     document.getElementById('saveBtn').addEventListener('click', save);
@@ -1951,8 +1957,7 @@
 
     let statsAutoHideTimeout = null;
 
-    async function statsShow() {
-      const type     = document.querySelector('input[name="statsType"]:checked')?.value || 'players';
+    async function statsShowType(type) {
       const duration = Number(document.getElementById('statsDuration').value) || 0;
       const statusEl = document.getElementById('stats-overlay-status');
       try {
@@ -1988,7 +1993,8 @@
       }
     }
 
-    document.getElementById('statsShowBtn').addEventListener('click', statsShow);
+    document.getElementById('statsShowPlayersBtn').addEventListener('click', () => statsShowType('players'));
+    document.getElementById('statsShowTeamsBtn').addEventListener('click',   () => statsShowType('teams'));
     document.getElementById('statsHideBtn').addEventListener('click', statsHide);
 
     // ── Live Focus Mode ───────────────────────────────────────────────────────
