@@ -53,6 +53,10 @@
       transform: scale(1.2);
       transform-origin: center center;
     }
+    /* Team stats is a single-column layout — much narrower */
+    .stats-panel.team-mode {
+      width: 800px;  /* 800 * 1.2 = 960px on screen */
+    }
 
     /* Panel header */
     .sp-header {
@@ -472,10 +476,12 @@
         el('sp-type-label').textContent = data.type === 'teams' ? 'Timska statistika' : 'Statistika igrača';
 
         if (data.type === 'teams') {
+          el('stats-panel').classList.add('team-mode');
           el('view-players').style.display = 'none';
           el('view-teams').style.display   = '';
           renderTeamStats(data);
         } else {
+          el('stats-panel').classList.remove('team-mode');
           el('view-teams').style.display   = 'none';
           el('view-players').style.display = '';
           renderPlayers(data);
