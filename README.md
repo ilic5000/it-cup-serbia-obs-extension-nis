@@ -1,10 +1,8 @@
-# IT Cup Serbia — OBS Extension
+# IT Cup Serbia - OBS Extension
 
 OBS browser-source overlay for IT Cup Serbia futsal league. Auto-fetches live match data from [itkupsrbije.com](https://itkupsrbije.com), provides a scoreboard, goal/card announcements, match timer, and a statistics panel.
 
-https://github.com/user-attachments/assets/it-cup-demo-walktrough.mp4
-
-> If the video doesn't play above, open [`resources/it-cup-demo-walktrough.mp4`](resources/it-cup-demo-walktrough.mp4) directly.
+> For a demo walktrough video, open [`resources/it-cup-demo-walktrough.mp4`](resources/it-cup-demo-walktrough.mp4) directly.
 
 ---
 
@@ -22,7 +20,7 @@ Configure and control everything from **`/settings.html`**.
 
 ## Run
 
-### Option A — `start.bat` (Windows, no Docker)
+### Option A: `start.bat` (Windows, no Docker)
 
 Requires [Node.js 18+](https://nodejs.org).
 
@@ -36,7 +34,7 @@ Edit `SET PORT=3042` inside `start.bat` to change the port.
 
 ---
 
-### Option B — Docker Compose
+### Option B: Docker Compose
 
 ```bash
 docker compose up -d
@@ -52,7 +50,7 @@ docker compose logs -f     # logs
 
 ---
 
-### Option C — Pull from GitHub Container Registry
+### Option C: Pull from GitHub Container Registry
 
 A pre-built image is published to `ghcr.io/ilic5000/it-cup-obs-extension`.
 
